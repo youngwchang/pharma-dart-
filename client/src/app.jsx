@@ -17,7 +17,7 @@ import _ from "lodash";
 /* ─────────────────────────────────────────
    CONFIG  (Render.com 서버 URL)
 ───────────────────────────────────────── */
-const PROXY = "/dart";
+const PROXY = "https://hdp-bd-report.onrender.com/dart";
 
 /* ─────────────────────────────────────────
    제약/바이오 상장사 목록 (~200개)
@@ -124,7 +124,19 @@ const PHARMA_LIST = [
 /* ─────────────────────────────────────────
    CONSTANTS
 ───────────────────────────────────────── */
-const YEARS = [2016,2017,2018,2019,2020,2021,2022,2023,2024,2025];
+const THIS_YEAR = new Date().getFullYear();
+const START_YEAR = 2010; // 선택 가능한 최초 연도
+
+const REPORT_TYPES = [
+  { code:"11011", label:"연간 (사업보고서)",   short:"연간",  quarter:null },
+  { code:"11013", label:"1분기 보고서",        short:"1Q",    quarter:"Q1" },
+  { code:"11012", label:"반기 (2분기) 보고서", short:"2Q",    quarter:"Q2" },
+  { code:"11014", label:"3분기 보고서",        short:"3Q",    quarter:"Q3" },
+];
+
+const makeYears = (from, to) =>
+  Array.from({ length: to - from + 1 }, (_, i) => from + i);
+
 const TYPE_COLORS = {
   "의약품·제약":"#38bdf8",
   "바이오·제약":"#34d399",
@@ -140,7 +152,7 @@ const fmtN   = v  => v!=null&&!isNaN(v)?Number(v).toLocaleString():"—";
 /* ─────────────────────────────────────────
    ANALYTICS
 ───────────────────────────────────────── */
-function computeMetrics(rawData) {
+function computeMetrics(rawData, YEARS) {
   return Object.entries(rawData).map(([name, d]) => {
     if (!d?.years) return null;
     const rows = YEARS.map(y => {
@@ -353,8 +365,7 @@ function exportHTML(metrics, rawData, filtered, filterInfo, trend) {
   .co-k{background:#0a0f1a;border-radius:5px;padding:4px 10px;font-size:9px}
   .co-k-label{color:#334155;display:block;margin-bottom:1px}
   .co-k-val{font-family:monospace;font-weight:700}
-  .co-body{display:none;padding:0 16px 14px}
-  .co-body.open{display:block}
+  .co-body{padding:0 16px 14px}
   .co-tbl table{font-size:9px}
   .co-tbl td,.co-tbl th{padding:4px 7px}
   /* FILTER INFO */
@@ -500,7 +511,7 @@ ${filtered.map(m=>{
     <div style="display:flex;gap:16px;align-items:center">
       <span style="font-family:monospace;font-size:11px;font-weight:700;color:${m.cagr>=20?"#4ade80":m.cagr<0?"#f87171":"#94a3b8"}">CAGR ${fp(m.cagr)}</span>
       <span style="font-family:monospace;font-size:11px;color:#38bdf8">${fb(m.latestRev)}</span>
-      <span style="color:#334155;font-size:14px">▸</span>
+      <span style="color:#334155;font-size:14px" class="toggle-arrow">▾</span>
     </div>
   </div>
   <div class="co-body">
@@ -546,12 +557,13 @@ ${filtered.map(m=>{
 </footer>
 
 <script>
-// 펼치기/닫기
+// 펼치기/닫기 (기본: 모두 열림)
 function toggle(el) {
-  const body = el.nextElementSibling;
-  const arrow = el.querySelector('span:last-child');
-  body.classList.toggle('open');
-  arrow.textContent = body.classList.contains('open') ? '▾' : '▸';
+  const body  = el.nextElementSibling;
+  const arrow = el.querySelector('.toggle-arrow');
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  if (arrow) arrow.textContent = isOpen ? '▸' : '▾';
 }
 // 테이블 정렬
 let sortCol=-1, sortAsc=true;
@@ -828,7 +840,7 @@ const COLS = [
 ───────────────────────────────────────── */
 export default function PharmaDART() {
   const [rawData,   setRawData]   = useState({});
-  const [phase,     setPhase]     = useState("idle"); // idle|resolving|collecting|done
+  const [phase,     setPhase]     = useState("idle");
   const [progress,  setProgress]  = useState({n:0,total:0,cur:"",ok:0,fail:0});
   const [log,       setLog]       = useState([]);
   const [errors,    setErrors]    = useState([]);
@@ -838,8 +850,35 @@ export default function PharmaDART() {
   const [sortDir,   setSortDir]   = useState("desc");
   const [fType,     setFType]     = useState("전체");
   const [search,    setSearch]    = useState("");
+  // 기간 설정
+  const [periodMode, setPeriodMode] = useState("annual");   // annual | quarterly
+  const [yearFrom,   setYearFrom]   = useState(2016);
+  const [yearTo,     setYearTo]     = useState(THIS_YEAR);
+  const [reprtCode,  setReprtCode]  = useState("11011");     // 연간 모드용
+  const [quarters,   setQuarters]   = useState(["Q1","Q2","Q3","Q4"]); // 분기별 모드용
+  const [collectedPeriod, setCollectedPeriod] = useState(null);
   const abortRef = useRef(false);
   const addLog = msg => setLog(p=>[...p.slice(-100), `[${new Date().toLocaleTimeString("ko-KR")}] ${msg}`]);
+
+  // 현재 설정으로 기간 키 목록 생성
+  const buildPeriodKeys = (from, to, mode, qts, rCode) => {
+    if (mode === "quarterly") {
+      const keys = [];
+      for (let y = from; y <= to; y++)
+        for (const q of qts) keys.push(`${y}_${q}`);
+      return keys;
+    }
+    return makeYears(from, to).map(String);
+  };
+
+  const periodKeys = collectedPeriod
+    ? buildPeriodKeys(collectedPeriod.yearFrom, collectedPeriod.yearTo,
+                      collectedPeriod.mode, collectedPeriod.quarters, collectedPeriod.reprtCode)
+    : buildPeriodKeys(yearFrom, yearTo, periodMode, quarters, reprtCode);
+
+  const periodLabel = k => periodMode==="quarterly" || (collectedPeriod?.mode==="quarterly")
+    ? k.replace("_", " ")           // "2024_Q1" → "2024 Q1"
+    : k;                            // "2024" 그대로
 
   /* ── COLLECT ── */
   const startCollection = async () => {
@@ -848,47 +887,57 @@ export default function PharmaDART() {
     setRawData({});
     setLog([]);
     setErrors([]);
+
+    const meta = { yearFrom, yearTo, mode:periodMode, quarters, reprtCode };
+    setCollectedPeriod(meta);
+
+    const modeDesc = periodMode==="quarterly"
+      ? `분기별 (${quarters.join(",")})`
+      : REPORT_TYPES.find(r=>r.code===reprtCode)?.label||"연간";
+    addLog(`기간: ${yearFrom}~${yearTo} · ${modeDesc}`);
     addLog("Step 1: DART corplist 조회 중...");
 
-    // 1. corp_code 목록 가져오기
     let nameMap = {};
     try {
       const r = await fetch(`${PROXY}/corplist`);
       const j = await r.json();
       if (j.list) {
         for (const c of j.list) nameMap[c.corp_name] = c.corp_code;
-        addLog(`✅ 상장사 ${j.total.toLocaleString()}개 corp_code 로드 완료`);
+        addLog(`✅ ${j.total.toLocaleString()}개 corp_code 로드`);
       }
-    } catch(e) {
-      addLog(`⚠ corplist 실패: ${e.message} — corp_code 없이 진행 불가`);
-      setPhase("idle"); return;
-    }
+    } catch(e) { addLog(`⚠ corplist 실패: ${e.message}`); setPhase("idle"); return; }
 
-    // 2. 기업 목록 매칭
     const resolved = PHARMA_LIST.map(c => {
       const corp_code = nameMap[c.name];
-      if (!corp_code) addLog(`⚠ corp_code 미발견: ${c.name}`);
+      if (!corp_code) addLog(`⚠ 미발견: ${c.name}`);
       return { ...c, corp_code };
     }).filter(c => c.corp_code);
 
-    addLog(`Step 2: ${resolved.length}개사 / ${PHARMA_LIST.length}개사 매칭 완료`);
+    addLog(`Step 2: ${resolved.length}개사 매칭`);
     setPhase("collecting");
     setProgress({n:0, total:resolved.length, cur:"", ok:0, fail:0});
 
-    // 3. 기업별 수집
     for (let i=0; i<resolved.length; i++) {
       if (abortRef.current) { addLog("⏹ 중단"); break; }
       const c = resolved[i];
       setProgress(p=>({...p, n:i+1, cur:c.name}));
 
       try {
-        const r = await fetch(`${PROXY}/batch?corp_code=${c.corp_code}`);
+        let url;
+        if (periodMode === "quarterly") {
+          url = `${PROXY}/batch?corp_code=${c.corp_code}&mode=quarterly`
+              + `&year_from=${yearFrom}&year_to=${yearTo}&quarters=${quarters.join(",")}`;
+        } else {
+          const yrs = makeYears(yearFrom, yearTo).join(",");
+          url = `${PROXY}/batch?corp_code=${c.corp_code}&mode=annual&years=${yrs}&reprt_code=${reprtCode}`;
+        }
+        const r = await fetch(url);
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const j = await r.json();
-        const yCount = Object.values(j.years||{}).filter(y=>y?.revenue>0).length;
+        const cnt = Object.values(j.years||{}).filter(y=>y?.revenue>0).length;
         setRawData(prev=>({...prev, [c.name]:{type:c.type, market:c.market, years:j.years||{}}}));
         setProgress(p=>({...p, ok:p.ok+1}));
-        addLog(`✓ ${c.name}: ${yCount}년 데이터`);
+        addLog(`✓ ${c.name}: ${cnt}개 기간`);
       } catch(e) {
         setErrors(p=>[...p, `${c.name}: ${e.message}`]);
         setProgress(p=>({...p, fail:p.fail+1}));
@@ -896,10 +945,15 @@ export default function PharmaDART() {
       }
     }
     setPhase("done");
-    addLog(`🎉 수집 완료 — 토큰 사용: 0, DART API 직접 호출`);
+    addLog(`🎉 완료`);
   };
 
-  const metrics = useMemo(()=>computeMetrics(rawData),[rawData]);
+  const YEARS = collectedPeriod ? buildPeriodKeys(
+    collectedPeriod.yearFrom, collectedPeriod.yearTo,
+    collectedPeriod.mode, collectedPeriod.quarters, collectedPeriod.reprtCode
+  ) : buildPeriodKeys(yearFrom, yearTo, periodMode, quarters, reprtCode);
+
+  const metrics = useMemo(()=>computeMetrics(rawData, YEARS),[rawData, YEARS]);
   const trend   = useMemo(()=>YEARS.map(y=>{
     const ys=String(y);
     const vs=Object.values(rawData).filter(d=>d?.years?.[ys]?.revenue>0).map(d=>d.years[ys]);
@@ -951,7 +1005,8 @@ export default function PharmaDART() {
               한국 제약/바이오 상장사 재무 분석
             </h1>
             <p style={{color:"#334155",margin:"4px 0 0",fontSize:11}}>
-              PlayMCP 없이 DART API 직접 → Render.com 프록시 경유 · {PHARMA_LIST.length}개사 대상
+              DART API 직접 호출 · {PHARMA_LIST.length}개사 대상
+              {collectedPeriod && ` · ${collectedPeriod.yearFrom}~${collectedPeriod.yearTo} ${collectedPeriod.reprtInfo.short}`}
             </p>
           </div>
           <div style={{display:"flex",gap:8}}>
@@ -977,30 +1032,78 @@ export default function PharmaDART() {
 
       {/* COLLECTION PANEL */}
       <div style={{background:"#0f172a",borderRadius:10,padding:16,marginBottom:16,border:"1px solid #1e293b"}}>
-        {/* cost comparison */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14}}>
-          {[
-            {label:"이전 방식 (PlayMCP + Claude)",cost:"~$20 USD · ~25분",items:["Claude API 호출 150회+","토큰 ~4M input / 570K output","PlayMCP → DART 3단계 경유"],bad:true},
-            {label:"현재 방식 (DART 직접 호출)",  cost:"$0 · ~12분",     items:["Claude API 호출 0회","토큰 0","브라우저 → Render → DART 2단계"],bad:false},
-          ].map(({label,cost,items,bad})=>(
-            <div key={label} style={{background:"#020617",borderRadius:8,padding:12,border:`1px solid ${bad?"#7f1d1d":"#14532d"}`}}>
-              <div style={{fontSize:10,fontWeight:700,color:bad?"#f87171":"#4ade80",marginBottom:6}}>{label}</div>
-              <div style={{fontSize:13,fontWeight:800,fontFamily:"monospace",color:bad?"#f87171":"#4ade80",marginBottom:8}}>{cost}</div>
-              {items.map(it=>(
-                <div key={it} style={{fontSize:9,color:"#475569",display:"flex",alignItems:"center",gap:5,marginBottom:3}}>
-                  <span>{bad?"✗":"✓"}</span>{it}
-                </div>
-              ))}
-            </div>
+
+        {/* 1행: 데이터 단위 */}
+        <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:12}}>
+          <div style={{fontSize:9,color:"#475569",letterSpacing:"0.1em",whiteSpace:"nowrap"}}>데이터 단위</div>
+          {[{v:"annual",l:"연간"},{v:"quarterly",l:"분기별"}].map(m=>(
+            <button key={m.v} onClick={()=>setPeriodMode(m.v)}
+              disabled={phase==="resolving"||phase==="collecting"}
+              style={{padding:"5px 14px",fontSize:11,fontWeight:600,borderRadius:6,cursor:"pointer",
+                background:periodMode===m.v?"#1e3a5f":"#020617",
+                color:periodMode===m.v?"#38bdf8":"#475569",
+                border:`1px solid ${periodMode===m.v?"#1d4ed8":"#1e293b"}`,transition:"all 0.15s"}}>
+              {m.l}
+            </button>
+          ))}
+          {/* 연간 모드: 보고서 종류 */}
+          {periodMode==="annual" && REPORT_TYPES.map(r=>(
+            <button key={r.code} onClick={()=>setReprtCode(r.code)}
+              disabled={phase==="resolving"||phase==="collecting"}
+              style={{padding:"5px 12px",fontSize:10,fontWeight:600,borderRadius:6,cursor:"pointer",
+                background:reprtCode===r.code?"#0c2340":"#020617",
+                color:reprtCode===r.code?"#7dd3fc":"#334155",
+                border:`1px solid ${reprtCode===r.code?"#0369a1":"#1e293b"}`,transition:"all 0.15s"}}>
+              {r.short}
+            </button>
+          ))}
+          {/* 분기별 모드: 분기 선택 */}
+          {periodMode==="quarterly" && ["Q1","Q2","Q3","Q4"].map(q=>(
+            <button key={q} onClick={()=>setQuarters(prev=>
+              prev.includes(q) ? prev.filter(x=>x!==q) : [...prev,q].sort()
+            )}
+              disabled={phase==="resolving"||phase==="collecting"}
+              style={{padding:"5px 12px",fontSize:10,fontWeight:600,borderRadius:6,cursor:"pointer",
+                background:quarters.includes(q)?"#1a2e1a":"#020617",
+                color:quarters.includes(q)?"#4ade80":"#334155",
+                border:`1px solid ${quarters.includes(q)?"#166534":"#1e293b"}`,transition:"all 0.15s"}}>
+              {q}
+            </button>
           ))}
         </div>
 
-        <div style={{display:"flex",gap:8,alignItems:"center"}}>
-          <div style={{fontSize:10,color:"#475569",flex:1}}>
-            프록시 서버: <code style={{color:"#38bdf8",fontSize:9}}>{PROXY}</code>
-            {" · "}
-            <code style={{color:"#34d399",fontSize:9}}>DART_API_KEY</code> 환경변수 필요
+        {/* 2행: 연도 범위 + 수집 버튼 */}
+        <div style={{display:"flex",gap:10,alignItems:"flex-end",flexWrap:"wrap"}}>
+          <div>
+            <div style={{fontSize:9,color:"#475569",marginBottom:5,letterSpacing:"0.1em"}}>시작 연도</div>
+            <select value={yearFrom} onChange={e=>setYearFrom(+e.target.value)}
+              disabled={phase==="resolving"||phase==="collecting"}
+              style={{background:"#020617",border:"1px solid #1e293b",borderRadius:6,color:"#e2e8f0",
+                fontSize:12,padding:"7px 10px",outline:"none",cursor:"pointer"}}>
+              {Array.from({length: THIS_YEAR - START_YEAR + 1}, (_,i)=>START_YEAR+i).map(y=>(
+                <option key={y} value={y}>{y}년</option>
+              ))}
+            </select>
           </div>
+          <div style={{fontSize:14,color:"#334155",paddingBottom:8}}>~</div>
+          <div>
+            <div style={{fontSize:9,color:"#475569",marginBottom:5,letterSpacing:"0.1em"}}>종료 연도</div>
+            <select value={yearTo} onChange={e=>setYearTo(+e.target.value)}
+              disabled={phase==="resolving"||phase==="collecting"}
+              style={{background:"#020617",border:"1px solid #1e293b",borderRadius:6,color:"#e2e8f0",
+                fontSize:12,padding:"7px 10px",outline:"none",cursor:"pointer"}}>
+              {Array.from({length: THIS_YEAR - START_YEAR + 1}, (_,i)=>START_YEAR+i)
+                .filter(y=>y>=yearFrom).map(y=>(
+                <option key={y} value={y}>{y}년</option>
+              ))}
+            </select>
+          </div>
+          <div style={{fontSize:10,color:"#334155",paddingBottom:8,whiteSpace:"nowrap"}}>
+            {periodMode==="quarterly"
+              ? `${(yearTo-yearFrom+1)*quarters.length}개 기간`
+              : `${yearTo-yearFrom+1}개년`}
+          </div>
+          <div style={{flex:1}}/>
           <button onClick={phase==="collecting"||phase==="resolving"?()=>{abortRef.current=true}:startCollection}
             style={{padding:"9px 20px",background:phase==="collecting"||phase==="resolving"?"#7f1d1d":phase==="done"?"#1e3a5f":"#14532d",
               color:"#fff",border:"none",borderRadius:7,cursor:"pointer",fontWeight:700,fontSize:12,whiteSpace:"nowrap"}}>
