@@ -23,13 +23,62 @@ const KEY     = () => process.env.DART_API_KEY;
 const DELAY   = 220; // ms between DART calls (안전마진 포함, 한도 초과 방지)
 
 /* ──────── helpers ──────── */
-const wait       = ms => new Promise(r => setTimeout(r, ms));
-const toInt      = s  => { const n = parseInt((s||'').replace(/,/g,''),10); return isNaN(n)?null:n; };
+const wait   = ms => new Promise(r => setTimeout(r, ms));
+const toInt  = s  => { const n = parseInt((s||'').replace(/,/g,''),10); return isNaN(n)?null:n; };
+
+// 계정 매칭: account_id 우선, 없으면 account_nm 포함 검색
 const firstMatch = (list, ids, nms) => {
-  for (const x of list) if (ids.includes(x.account_id))                        return toInt(x.thstrm_amount);
-  for (const x of list) if (nms.some(n => (x.account_nm||'').includes(n)))     return toInt(x.thstrm_amount);
+  for (const x of list) if (ids.includes(x.account_id))                    return toInt(x.thstrm_amount);
+  for (const x of list) if (nms.some(n => (x.account_nm||'').includes(n))) return toInt(x.thstrm_amount);
   return null;
 };
+
+// 판관비: 여러 계정명 합산 (제조원가 + 판관비 분리 공시 대응)
+const sumMatch = (list, nmsList) => {
+  let total = null;
+  for (const nms of nmsList) {
+    const v = firstMatch(list, [], nms);
+    if (v != null) total = (total || 0) + v;
+  }
+  return total;
+};
+
+// DART 보고서 코드
+const REPRT = { annual:'11011', q1:'11013', q2:'11012', q3:'11014' };
+
+// 재무제표 파싱 공통 함수
+function parseFinancial(list) {
+  const hasCFS = list.some(i => i.fs_div==='CFS');
+  const fsDiv  = hasCFS ? 'CFS' : 'OFS';
+  const IS     = list.filter(i => i.sj_div==='IS' && i.fs_div===fsDiv);
+  const BS     = list.filter(i => i.sj_div==='BS' && i.fs_div===fsDiv);
+
+  // 판관비: 표준 계정 → 없으면 여러 대체 명칭 합산
+  const sga = firstMatch(IS,
+    ['ifrs-full_SellingGeneralAndAdministrativeExpense','dart_Sga','dart_SellingGeneralAdministrativeExpenses'],
+    ['판매비와관리비','판매비 및 관리비','판관비','판매관리비']
+  ) ?? sumMatch(IS, [
+    ['판매비'],['관리비'],['영업관리비']
+  ]);
+
+  // 매출원가: 제약사는 제품+상품 합산인 경우 있음
+  const cogs = firstMatch(IS,
+    ['ifrs-full_CostOfSales','dart_CostOfSales'],
+    ['매출원가','제품매출원가']
+  ) ?? sumMatch(IS, [
+    ['제품매출원가'],['상품매출원가'],['용역매출원가']
+  ]);
+
+  return {
+    revenue:     firstMatch(IS, ['ifrs-full_Revenue','dart_Revenue','dart_OperatingRevenue'], ['매출액','수익(매출액)','영업수익','매출']),
+    op_profit:   firstMatch(IS, ['dart_OperatingIncomeLoss','ifrs-full_ProfitLossFromOperatingActivities'], ['영업이익','영업손익','영업이익(손실)']),
+    net_income:  firstMatch(IS, ['ifrs-full_ProfitLoss','ifrs-full_ProfitLossAttributableToOwnersOfParent'], ['당기순이익','당기순손익','당기순이익(손실)']),
+    assets:      firstMatch(BS, ['ifrs-full_Assets'], ['자산총계']),
+    liabilities: firstMatch(BS, ['ifrs-full_Liabilities'], ['부채총계']),
+    sga,
+    cogs,
+  };
+}
 
 /* ──────────────────────────────────────────────────────────
    GET /dart/corplist
@@ -166,63 +215,80 @@ router.get('/employees', async (req, res) => {
    GET /dart/batch?corp_code=XXXXXX
    financial + employees 한 번에 (아티팩트 호출 최소화)
 ────────────────────────────────────────────────────────── */
+/* ──────────────────────────────────────────────────────────
+   GET /dart/batch
+   financial + employees 한 번에
+   
+   연간 모드:   ?corp_code=X&years=2016,2017,...&reprt_code=11011
+   분기별 모드: ?corp_code=X&mode=quarterly&year_from=2024&year_to=2026&quarters=Q1,Q2,Q3,Q4
+────────────────────────────────────────────────────────── */
 router.get('/batch', async (req, res) => {
-  const { corp_code, years='2016,2017,2018,2019,2020,2021,2022,2023,2024,2025' } = req.query;
+  const { corp_code, mode='annual' } = req.query;
   if (!corp_code) return res.status(400).json({ error:'corp_code required' });
+  if (!KEY())     return res.status(500).json({ error:'DART_API_KEY not set' });
 
-  const yearList = years.split(',').map(s=>s.trim()).filter(Boolean);
-  const fin      = {};
-  const emp      = {};
+  // 기간 목록 생성: { key, bsns_year, reprt_code }[]
+  let periods = [];
 
-  for (const year of yearList) {
+  if (mode === 'quarterly') {
+    const year_from  = parseInt(req.query.year_from || new Date().getFullYear());
+    const year_to    = parseInt(req.query.year_to   || new Date().getFullYear());
+    const qList      = (req.query.quarters || 'Q1,Q2,Q3,Q4').split(',').map(s=>s.trim().toUpperCase());
+    const qMap       = { Q1: REPRT.q1, Q2: REPRT.q2, Q3: REPRT.q3, Q4: REPRT.annual };
+    for (let y = year_from; y <= year_to; y++) {
+      for (const q of qList) {
+        if (qMap[q]) periods.push({ key:`${y}_${q}`, bsns_year:String(y), reprt_code:qMap[q] });
+      }
+    }
+  } else {
+    // 연간 모드
+    const years      = (req.query.years || '2016,2017,2018,2019,2020,2021,2022,2023,2024,2025').split(',').map(s=>s.trim());
+    const reprt_code = req.query.reprt_code || REPRT.annual;
+    periods = years.map(y => ({ key:y, bsns_year:y, reprt_code }));
+  }
+
+  const result = {};
+
+  for (const p of periods) {
     // ── financial
     await wait(DELAY);
     try {
       const r = await axios.get(`${BASE}/fnlttSinglAcnt.json`, {
-        params: { crtfc_key:KEY(), corp_code, bsns_year:year, reprt_code:'11011' },
-        timeout: 10000,
+        params: { crtfc_key:KEY(), corp_code, bsns_year:p.bsns_year, reprt_code:p.reprt_code },
+        timeout: 12000,
       });
       if (r.data.status==='000' && r.data.list?.length) {
-        const hasCFS = r.data.list.some(i=>i.fs_div==='CFS');
-        const fsDiv  = hasCFS?'CFS':'OFS';
-        const IS     = r.data.list.filter(i=>i.sj_div==='IS'&&i.fs_div===fsDiv);
-        const BS     = r.data.list.filter(i=>i.sj_div==='BS'&&i.fs_div===fsDiv);
-        fin[year] = {
-          revenue:     firstMatch(IS,['ifrs-full_Revenue','dart_Revenue'],['매출액','수익(매출액)','영업수익']),
-          op_profit:   firstMatch(IS,['dart_OperatingIncomeLoss','ifrs-full_ProfitLossFromOperatingActivities'],['영업이익','영업손익']),
-          net_income:  firstMatch(IS,['ifrs-full_ProfitLoss','ifrs-full_ProfitLossAttributableToOwnersOfParent'],['당기순이익','당기순손익']),
-          assets:      firstMatch(BS,['ifrs-full_Assets'],['자산총계']),
-          liabilities: firstMatch(BS,['ifrs-full_Liabilities'],['부채총계']),
-          sga:         firstMatch(IS,['ifrs-full_SellingGeneralAndAdministrativeExpense','dart_Sga'],['판매비와관리비','판매비 및 관리비']),
-          cogs:        firstMatch(IS,['ifrs-full_CostOfSales'],['매출원가']),
-        };
-      } else fin[year]=null;
-    } catch { fin[year]=null; }
+        result[p.key] = parseFinancial(r.data.list);
+      } else {
+        result[p.key] = null;
+      }
+    } catch { result[p.key] = null; }
 
     // ── employees
     await wait(DELAY);
     try {
       const r = await axios.get(`${BASE}/empSttus.json`, {
-        params: { crtfc_key:KEY(), corp_code, bsns_year:year, reprt_code:'11011' },
+        params: { crtfc_key:KEY(), corp_code, bsns_year:p.bsns_year, reprt_code:p.reprt_code },
         timeout: 8000,
       });
       if (r.data.status==='000' && r.data.list?.length) {
-        const rows  = r.data.list.filter(e=>!e.fo_bbm||e.fo_bbm.includes('합계')||e.fo_bbm.trim()==='');
-        const total = rows.length
-          ? Math.max(...rows.map(e=>toInt(e.tot_cnt)||0))
-          : r.data.list.reduce((s,e)=>s+(toInt(e.tot_cnt)||0),0);
-        emp[year] = total||null;
-      } else emp[year]=null;
-    } catch { emp[year]=null; }
+        // 합계 행 탐지 (다양한 형태 대응)
+        const allRows = r.data.list;
+        const sumRows = allRows.filter(e =>
+          !e.fo_bbm ||
+          e.fo_bbm.includes('합계') ||
+          e.fo_bbm.trim() === '' ||
+          e.fo_bbm.trim() === '-'
+        );
+        const useRows = sumRows.length ? sumRows : allRows;
+        const total = useRows.reduce((s,e) => s + (toInt(e.tot_cnt)||0), 0);
+        if (result[p.key]) result[p.key].employees = total || null;
+        else result[p.key] = { employees: total || null };
+      }
+    } catch { /* 직원수 없어도 계속 */ }
   }
 
-  // Merge employees into financial
-  const merged = {};
-  for (const y of yearList) {
-    merged[y] = fin[y] ? { ...fin[y], employees: emp[y] } : (emp[y] ? { employees:emp[y] } : null);
-  }
-
-  res.json({ corp_code, years: merged });
+  res.json({ corp_code, mode, years: result });
 });
 
 /* health */
