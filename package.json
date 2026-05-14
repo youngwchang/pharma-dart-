@@ -1,0 +1,16 @@
+{
+  "name": "pharma-dart",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node server.js",
+    "build": "cd client && npm install && npm run build",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "axios": "^1.6.0",
+    "adm-zip": "^0.5.10",
+    "xml2js": "^0.6.2",
+    "cors": "^2.8.5"
+  }
+}
