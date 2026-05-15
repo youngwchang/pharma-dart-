@@ -17,7 +17,7 @@ import _ from "lodash";
 /* ─────────────────────────────────────────
    CONFIG  (Render.com 서버 URL)
 ───────────────────────────────────────── */
-const PROXY = "/dart";
+const PROXY = "https://hdp-bd-report.onrender.com/dart";
 
 /* ─────────────────────────────────────────
    제약/바이오 상장사 목록 (~200개)
@@ -161,12 +161,16 @@ function computeMetrics(rawData, YEARS) {
     }).filter(Boolean);
     if (rows.length < 2) return null;
     const first = rows[0], last = rows[rows.length-1];
-    const yrs = last.year - first.year;
-    const cagr = yrs > 0 ? (Math.pow(last.revenue/first.revenue, 1/yrs)-1)*100 : 0;
+    // 연도 차이: 문자열도 안전하게 숫자로 변환
+    const yrs = Number(String(last.year).replace(/\D.*$/,"")) -
+                Number(String(first.year).replace(/\D.*$/,""));
+    const cagr = yrs > 0
+      ? (Math.pow(last.revenue/first.revenue, 1/yrs)-1)*100
+      : null; // 같은 연도면 CAGR 계산 불가 → "—"
     const avg = (arr, fn) => arr.length ? _.mean(arr.map(fn)) : null;
     return {
       name, type:d.type, market:d.market||"",
-      cagr:       +cagr.toFixed(1),
+      cagr:       cagr!=null ? +cagr.toFixed(1) : null,
       latestRev:  last.revenue,
       latestRevB: +(last.revenue/1e8).toFixed(0),
       opMargin:   avg(rows.filter(r=>r.op_profit!=null&&r.revenue>0), r=>r.op_profit/r.revenue*100),
@@ -178,7 +182,7 @@ function computeMetrics(rawData, YEARS) {
       dataYears:  rows.length,
       rows,
     };
-  }).filter(Boolean).sort((a,b)=>b.cagr-a.cagr);
+  }).filter(Boolean).sort((a,b)=>(b.cagr??-999)-(a.cagr??-999));
 }
 
 /* ─────────────────────────────────────────
@@ -821,18 +825,15 @@ function DetailLayout({metrics, rawData, selCompany, setSelCo}) {
    SORTABLE TABLE
 ───────────────────────────────────────── */
 const COLS = [
-  {key:"name",      label:"기업명",    w:120, align:"left", fmt:v=>v},
+  {key:"name",      label:"기업명",    w:130, align:"left", fmt:v=>v},
   {key:"type",      label:"업종",      w:90,  align:"left", fmt:v=>v},
   {key:"market",    label:"시장",      w:65,  align:"left", fmt:v=>v||"—"},
-  {key:"cagr",      label:"CAGR",      w:70,  fmt:v=>fmtP(v), color:v=>v>=20?"#4ade80":v>=5?"#e2e8f0":v<0?"#f87171":"#94a3b8"},
-  {key:"latestRevB",label:"최신매출",  w:95,  fmt:v=>v!=null?`${v.toLocaleString()}억`:"—"},
-  {key:"opMargin",  label:"영업이익률",w:80,  fmt:v=>fmtP(v), color:v=>v>15?"#4ade80":v<0?"#f87171":null},
-  {key:"netMargin", label:"순이익률",  w:75,  fmt:v=>fmtP(v)},
-  {key:"sgaRatio",  label:"판관비율",  w:75,  fmt:v=>fmtP(v), color:()=>"#fbbf24"},
-  {key:"cogsRatio", label:"원가율",    w:70,  fmt:v=>fmtP(v), color:()=>"#f87171"},
-  {key:"debtRatio", label:"부채비율",  w:75,  fmt:v=>fmtP(v)},
-  {key:"latestEmp", label:"직원수",    w:80,  fmt:v=>v?`${v.toLocaleString()}명`:"—"},
-  {key:"dataYears", label:"데이터",    w:60,  fmt:v=>`${v}년`},
+  {key:"cagr",      label:"CAGR",      w:75,  fmt:v=>v!=null?fmtP(v):"—", color:v=>v>=20?"#4ade80":v>=5?"#e2e8f0":v<0?"#f87171":"#94a3b8"},
+  {key:"latestRevB",label:"최신매출",  w:100, fmt:v=>v!=null?`${v.toLocaleString()}억`:"—"},
+  {key:"opMargin",  label:"영업이익률",w:85,  fmt:v=>fmtP(v), color:v=>v>15?"#4ade80":v<0?"#f87171":null},
+  {key:"netMargin", label:"순이익률",  w:80,  fmt:v=>fmtP(v)},
+  {key:"debtRatio", label:"부채비율",  w:80,  fmt:v=>fmtP(v)},
+  {key:"dataYears", label:"데이터",    w:65,  fmt:v=>`${v}개`},
 ];
 
 /* ─────────────────────────────────────────
@@ -1006,11 +1007,7 @@ export default function PharmaDART() {
             </h1>
             <p style={{color:"#334155",margin:"4px 0 0",fontSize:11}}>
               DART API 직접 호출 · {PHARMA_LIST.length}개사 대상
-              {collectedPeriod && ` · ${collectedPeriod.yearFrom}~${collectedPeriod.yearTo} ${
-  collectedPeriod.mode==="quarterly"
-    ? `분기(${collectedPeriod.quarters?.join(",")})`
-    : REPORT_TYPES.find(r=>r.code===collectedPeriod.reprtCode)?.short||"연간"
-}`}
+              {collectedPeriod && ` · ${collectedPeriod.yearFrom}~${collectedPeriod.yearTo} ${collectedPeriod.reprtInfo.short}`}
             </p>
           </div>
           <div style={{display:"flex",gap:8}}>
