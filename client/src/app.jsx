@@ -610,10 +610,10 @@ const Tip = ({ active, payload, label }) => {
   if (!active||!payload?.length) return null;
   return (
     <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:8,padding:"10px 14px",fontSize:11,boxShadow:"0 4px 16px rgba(0,0,0,0.08)"}}>
-      <div style={{color:"#6b7280",marginBottom:6,fontWeight:600}}>{label}</div>
+      <div style={{color:"#1f2937",marginBottom:6,fontWeight:600}}>{label}</div>
       {payload.map((p,i)=>(
         <div key={i} style={{display:"flex",justifyContent:"space-between",gap:12}}>
-          <span style={{color:"#6b7280"}}>{p.name}</span>
+          <span style={{color:"#1f2937"}}>{p.name}</span>
           <b style={{color:p.color||"#0f172a"}}>{typeof p.value==="number"?p.value.toFixed(1):p.value}</b>
         </div>
       ))}
@@ -624,9 +624,9 @@ const Tip = ({ active, payload, label }) => {
 const Kpi = ({label, value, color="#2563eb", sub}) => (
   <div style={{background:"#ffffff",borderRadius:8,padding:"13px 16px",flex:1,minWidth:110,
     boxShadow:"0 1px 4px rgba(0,0,0,0.08)",border:"1px solid #e2e8f0",borderTop:`3px solid ${color}`}}>
-    <div style={{fontSize:9,color:"#9ca3af",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:6}}>{label}</div>
+    <div style={{fontSize:9,color:"#1f2937",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:6}}>{label}</div>
     <div style={{fontSize:20,fontWeight:800,color:"#0f172a",fontFamily:"'IBM Plex Mono',monospace",lineHeight:1}}>{value}</div>
-    {sub&&<div style={{fontSize:9,color:"#9ca3af",marginTop:4}}>{sub}</div>}
+    {sub&&<div style={{fontSize:9,color:"#1f2937",marginTop:4}}>{sub}</div>}
   </div>
 );
 
@@ -635,7 +635,7 @@ const Kpi = ({label, value, color="#2563eb", sub}) => (
 ───────────────────────────────────────── */
 function CompanyDetail({name, d, metrics}) {
   const m = metrics.find(x=>x.name===name);
-  if (!m) return <div style={{color:"#374151",padding:20}}>데이터 없음</div>;
+  if (!m) return <div style={{color:"#1f2937",padding:20}}>데이터 없음</div>;
   const tc = TYPE_COLORS[m.type]||"#64748b";
   const revData  = m.rows.map(r=>({year:r.year,"매출(억)":+(r.revenue/1e8).toFixed(0)}));
   const margData = m.rows.map(r=>({year:r.year,
@@ -662,7 +662,7 @@ function CompanyDetail({name, d, metrics}) {
         <Kpi label="최신매출"   value={fmtB(m.latestRev)}              color="#2563eb"/>
         <Kpi label="영업이익률" value={fmtP(m.opMargin)}               color="#16a34a"/>
         <Kpi label="순이익률"   value={fmtP(m.netMargin)}              color="#7c3aed"/>
-        <Kpi label="판관비율"   value={fmtP(m.sgaRatio)}               color="#b45309"/>
+
         <Kpi label="부채비율"   value={fmtP(m.debtRatio)}              color="#ea580c"/>
       </div>
 
@@ -673,14 +673,14 @@ function CompanyDetail({name, d, metrics}) {
           {data:margData, lines:[{k:"영업이익률",c:"#16a34a"},{k:"순이익률",c:"#7c3aed"}], title:"이익률 추이 (%)", u:"%"},
         ].map(({data,lines,title,u})=>(
           <div key={title} style={{background:"#f8fafc",borderRadius:8,padding:"12px 14px",border:"1px solid #e2e8f0"}}>
-            <div style={{fontSize:11,fontWeight:700,color:"#374151",marginBottom:10}}>{title}</div>
+            <div style={{fontSize:11,fontWeight:700,color:"#1f2937",marginBottom:10}}>{title}</div>
             <ResponsiveContainer width="100%" height={160}>
               <LineChart data={data}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb"/>
-                <XAxis dataKey="year" stroke="#e5e7eb" tick={{fontSize:9,fill:"#6b7280"}}/>
-                <YAxis stroke="#e5e7eb" tick={{fontSize:9,fill:"#6b7280"}} unit={u} width={44}/>
+                <XAxis dataKey="year" stroke="#e5e7eb" tick={{fontSize:9,fill:"#4b5563"}}/>
+                <YAxis stroke="#e5e7eb" tick={{fontSize:9,fill:"#4b5563"}} unit={u} width={44}/>
                 <Tooltip content={<Tip/>}/>
-                <Legend wrapperStyle={{fontSize:10,color:"#6b7280"}}/>
+                <Legend wrapperStyle={{fontSize:10,color:"#1f2937"}}/>
                 {lines.map(l=><Line key={l.k} type="monotone" dataKey={l.k} stroke={l.c} strokeWidth={2.5} dot={{r:3,fill:l.c}} connectNulls/>)}
               </LineChart>
             </ResponsiveContainer>
@@ -690,16 +690,16 @@ function CompanyDetail({name, d, metrics}) {
 
       {/* 연도별 원시 데이터 */}
       <div style={{background:"#f8fafc",borderRadius:8,border:"1px solid #e2e8f0",overflowX:"auto"}}>
-        <div style={{fontSize:11,fontWeight:700,color:"#374151",padding:"10px 14px",borderBottom:"1px solid #e2e8f0"}}>연도별 상세 데이터</div>
+        <div style={{fontSize:11,fontWeight:700,color:"#1f2937",padding:"10px 14px",borderBottom:"1px solid #e2e8f0"}}>연도별 상세 데이터</div>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
           <thead>
             <tr>{["연도","매출(억)","영업이익(억)","순이익(억)","자산(억)","부채(억)","영업이익률","순이익률","부채비율"].map(h=>(
-              <th key={h} style={{padding:"7px 10px",textAlign:"right",color:"#9ca3af",fontWeight:600,borderBottom:"1px solid #e2e8f0",fontSize:9,whiteSpace:"nowrap"}}>{h}</th>
+              <th key={h} style={{padding:"7px 10px",textAlign:"right",color:"#111827",fontWeight:700,borderBottom:"1px solid #e2e8f0",fontSize:9,whiteSpace:"nowrap"}}>{h}</th>
             ))}</tr>
           </thead>
           <tbody>
             {m.rows.map((r,i)=>(
-              <tr key={r.year} style={{background:i%2?"#f1f5f9":"#ffffff",borderBottom:"1px solid #e5e7eb"}}>
+              <tr key={r.year} style={{background:i%2?"#f8fafc":"#ffffff",borderBottom:"1px solid #e5e7eb"}}>
                 <td style={{padding:"6px 10px",fontWeight:700,color:"#2563eb",fontFamily:"monospace",textAlign:"right"}}>{r.year}</td>
                 {[r.revenue,r.op_profit,r.net_income,r.assets,r.liabilities].map((v,j)=>(
                   <td key={j} style={{padding:"6px 10px",fontFamily:"monospace",textAlign:"right",color:"#0f172a"}}>
@@ -753,10 +753,10 @@ function DetailLayout({metrics, rawData, selCompany, setSelCo}) {
         {/* search */}
         <div style={{padding:"8px 8px 6px",borderBottom:"1px solid #d1d5db"}}>
           <div style={{position:"relative"}}>
-            <span style={{position:"absolute",left:7,top:"50%",transform:"translateY(-50%)",fontSize:10,color:"#9ca3af"}}>🔍</span>
+            <span style={{position:"absolute",left:7,top:"50%",transform:"translateY(-50%)",fontSize:10,color:"#1f2937"}}>🔍</span>
             <input value={q} onChange={e=>setQ(e.target.value)} placeholder="기업명..."
               style={{width:"100%",padding:"5px 22px",background:"#ffffff",border:"1px solid #d1d5db",borderRadius:5,color:"#0f172a",fontSize:11,outline:"none",boxSizing:"border-box"}}/>
-            {q&&<button onClick={()=>setQ("")} style={{position:"absolute",right:5,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#374151",cursor:"pointer",fontSize:11,padding:0}}>✕</button>}
+            {q&&<button onClick={()=>setQ("")} style={{position:"absolute",right:5,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#1f2937",cursor:"pointer",fontSize:11,padding:0}}>✕</button>}
           </div>
         </div>
         {/* filters */}
@@ -772,7 +772,7 @@ function DetailLayout({metrics, rawData, selCompany, setSelCo}) {
             ))}
           </div>
           <select value={sortBy} onChange={e=>setSortBy(e.target.value)} style={{
-            background:"#ffffff",border:"1px solid #d1d5db",borderRadius:4,color:"#374151",
+            background:"#ffffff",border:"1px solid #d1d5db",borderRadius:4,color:"#1f2937",
             fontSize:9,padding:"2px 4px",outline:"none",cursor:"pointer",width:"100%"
           }}>
             <option value="cagr">CAGR 높은순</option>
@@ -781,24 +781,24 @@ function DetailLayout({metrics, rawData, selCompany, setSelCo}) {
           </select>
         </div>
         {/* count */}
-        <div style={{padding:"4px 10px",borderBottom:"1px solid #d1d5db",fontSize:9,color:"#9ca3af",fontFamily:"monospace"}}>
+        <div style={{padding:"4px 10px",borderBottom:"1px solid #d1d5db",fontSize:9,color:"#1f2937",fontFamily:"monospace"}}>
           {visible.length}개 / 전체 {metrics.length}개
         </div>
         {/* list */}
         <div style={{height:500,overflowY:"auto"}}>
-          {visible.length===0&&<div style={{padding:16,textAlign:"center",color:"#9ca3af",fontSize:11}}>검색 결과 없음</div>}
+          {visible.length===0&&<div style={{padding:16,textAlign:"center",color:"#1f2937",fontSize:11}}>검색 결과 없음</div>}
           {visible.map((m,i)=>{
             const isActive = m.name===selected;
             const tc = TYPE_COLORS[m.type]||"#94a3b8";
             return (
               <div key={m.name} onClick={()=>setSelCo(m.name)}
-                style={{padding:"8px 10px",background:isActive?tc+"18":i%2?"#070d18":"transparent",
+                style={{padding:"8px 10px",background:isActive?tc+"20":i%2?"#f8fafc":"#ffffff",
                   borderLeft:`3px solid ${isActive?tc:"transparent"}`,cursor:"pointer",
                   borderBottom:"1px solid #0d1526",transition:"all 0.1s"}}
                 onMouseEnter={e=>{if(!isActive)e.currentTarget.style.background="#1e293b"}}
                 onMouseLeave={e=>{if(!isActive)e.currentTarget.style.background=i%2?"#070d18":"transparent"}}
               >
-                <div style={{fontSize:11,fontWeight:isActive?700:500,color:isActive?tc:"#cbd5e1",
+                <div style={{fontSize:11,fontWeight:isActive?700:500,color:isActive?tc:"#1f2937",
                   whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",marginBottom:2}}>{m.name}</div>
                 <div style={{display:"flex",justifyContent:"space-between"}}>
                   <span style={{fontSize:8,color:tc,fontWeight:600}}>{m.type?.split("·")[0]}</span>
@@ -815,7 +815,7 @@ function DetailLayout({metrics, rawData, selCompany, setSelCo}) {
       <div>
         {selected
           ? <CompanyDetail name={selected} d={rawData[selected]} metrics={metrics}/>
-          : <div style={{padding:40,textAlign:"center",color:"#9ca3af",fontSize:12}}>← 기업을 선택하세요</div>
+          : <div style={{padding:40,textAlign:"center",color:"#1f2937",fontSize:12}}>← 기업을 선택하세요</div>
         }
       </div>
     </div>
@@ -835,8 +835,7 @@ const COLS = [
   {key:"opMargin",   label:"영업이익률", w:85,
     fmt:v=>fmtP(v), color:v=>v>15?"#16a34a":v<0?"#dc2626":"#0f172a"},
   {key:"netMargin",  label:"순이익률",   w:80,  fmt:v=>fmtP(v)},
-  {key:"sgaRatio",   label:"판관비율",   w:80,  fmt:v=>fmtP(v),
-    color:v=>v!=null?"#b45309":null},
+
   {key:"debtRatio",  label:"부채비율",   w:80,  fmt:v=>fmtP(v)},
   {key:"dataYears",  label:"데이터",     w:65,  fmt:v=>`${v}개`},
 ];
@@ -1002,7 +1001,7 @@ export default function PharmaDART() {
 
       {/* HEADER */}
       <div style={{marginBottom:18}}>
-        <div style={{fontSize:10,color:"#38bdf8",fontFamily:"monospace",letterSpacing:"0.15em",marginBottom:4}}>
+        <div style={{fontSize:10,color:"#38bdf8",fontFamily:"monospace",letterSpacing:"0.15em",marginBottom:4,color:"#374151"}}>
           DART OPENAPI DIRECT · 토큰 0 · 비용 0
         </div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
@@ -1010,7 +1009,7 @@ export default function PharmaDART() {
             <h1 style={{fontSize:17,fontWeight:900,margin:0,letterSpacing:"-0.03em"}}>
               한국 제약/바이오 상장사 재무 분석
             </h1>
-            <p style={{color:"#9ca3af",margin:"4px 0 0",fontSize:11}}>
+            <p style={{color:"#1f2937",margin:"4px 0 0",fontSize:11}}>
               DART API 직접 호출 · {PHARMA_LIST.length}개사 대상
               {collectedPeriod && ` · ${collectedPeriod.yearFrom}~${collectedPeriod.yearTo} ${
                 collectedPeriod.mode==="quarterly"
@@ -1045,7 +1044,7 @@ export default function PharmaDART() {
 
         {/* 1행: 데이터 단위 */}
         <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:12}}>
-          <div style={{fontSize:9,color:"#374151",letterSpacing:"0.1em",whiteSpace:"nowrap"}}>데이터 단위</div>
+          <div style={{fontSize:9,color:"#1f2937",letterSpacing:"0.1em",whiteSpace:"nowrap"}}>데이터 단위</div>
           {[{v:"annual",l:"연간"},{v:"quarterly",l:"분기별"}].map(m=>(
             <button key={m.v} onClick={()=>setPeriodMode(m.v)}
               disabled={phase==="resolving"||phase==="collecting"}
@@ -1090,7 +1089,7 @@ export default function PharmaDART() {
         {/* 2행: 연도 범위 + 수집 버튼 */}
         <div style={{display:"flex",gap:10,alignItems:"flex-end",flexWrap:"wrap"}}>
           <div>
-            <div style={{fontSize:9,color:"#374151",marginBottom:5,letterSpacing:"0.1em"}}>시작 연도</div>
+            <div style={{fontSize:9,color:"#1f2937",marginBottom:5,letterSpacing:"0.1em"}}>시작 연도</div>
             <select value={yearFrom} onChange={e=>setYearFrom(+e.target.value)}
               disabled={phase==="resolving"||phase==="collecting"}
               style={{background:"#ffffff",border:"1px solid #d1d5db",borderRadius:6,color:"#0f172a",
@@ -1100,9 +1099,9 @@ export default function PharmaDART() {
               ))}
             </select>
           </div>
-          <div style={{fontSize:14,color:"#9ca3af",paddingBottom:8}}>~</div>
+          <div style={{fontSize:14,color:"#1f2937",paddingBottom:8}}>~</div>
           <div>
-            <div style={{fontSize:9,color:"#374151",marginBottom:5,letterSpacing:"0.1em"}}>종료 연도</div>
+            <div style={{fontSize:9,color:"#1f2937",marginBottom:5,letterSpacing:"0.1em"}}>종료 연도</div>
             <select value={yearTo} onChange={e=>setYearTo(+e.target.value)}
               disabled={phase==="resolving"||phase==="collecting"}
               style={{background:"#ffffff",border:"1px solid #d1d5db",borderRadius:6,color:"#0f172a",
@@ -1113,7 +1112,7 @@ export default function PharmaDART() {
               ))}
             </select>
           </div>
-          <div style={{fontSize:10,color:"#9ca3af",paddingBottom:8,whiteSpace:"nowrap"}}>
+          <div style={{fontSize:10,color:"#1f2937",paddingBottom:8,whiteSpace:"nowrap"}}>
             {periodMode==="quarterly"
               ? `${(yearTo-yearFrom+1)*quarters.length}개 기간`
               : `${yearTo-yearFrom+1}개년`}
@@ -1128,7 +1127,7 @@ export default function PharmaDART() {
 
         {phase!=="idle"&&(
           <div style={{marginTop:12}}>
-            <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#374151",marginBottom:4,fontFamily:"monospace"}}>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#1f2937",marginBottom:4,fontFamily:"monospace"}}>
               <span>
                 {phase==="resolving"&&"corp_code 해석 중..."}
                 {phase==="collecting"&&`[${progress.n}/${progress.total}] ${progress.cur} · 성공 ${progress.ok} / 실패 ${progress.fail}`}
@@ -1176,7 +1175,7 @@ export default function PharmaDART() {
                 }}>{t}</button>
               ))}
             </div>
-            <div style={{marginLeft:"auto",fontSize:10,color:"#9ca3af",fontFamily:"monospace"}}>{filtered.length} / {metrics.length}개사</div>
+            <div style={{marginLeft:"auto",fontSize:10,color:"#1f2937",fontFamily:"monospace"}}>{filtered.length} / {metrics.length}개사</div>
           </div>
           <div style={{background:"#f1f5f9",borderRadius:10,border:"1px solid #d1d5db",overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
@@ -1184,12 +1183,12 @@ export default function PharmaDART() {
                 <tr style={{borderBottom:"2px solid #d1d5db"}}>
                   {COLS.map(c=>(
                     <th key={c.key} className="th" onClick={()=>handleSort(c.key)}
-                      style={{padding:"8px 9px",textAlign:c.align||"right",color:sortKey===c.key?"#38bdf8":"#334155",fontWeight:600,
+                      style={{padding:"8px 9px",textAlign:c.align||"right",color:sortKey===c.key?"#2563eb":"#374151",fontWeight:600,
                         whiteSpace:"nowrap",fontSize:9,letterSpacing:"0.05em",fontFamily:"monospace",minWidth:c.w}}>
                       {c.label}{" "}{sortKey===c.key?sortDir==="asc"?"▲":"▼":"⇅"}
                     </th>
                   ))}
-                  <th style={{padding:"8px 9px",color:"#9ca3af",fontSize:9}}>상세</th>
+                  <th style={{padding:"8px 9px",color:"#1f2937",fontSize:9}}>상세</th>
                 </tr>
               </thead>
               <tbody>
@@ -1217,7 +1216,7 @@ export default function PharmaDART() {
                   </tr>
                 ))}
                 {!filtered.length&&(
-                  <tr><td colSpan={COLS.length+1} style={{padding:30,textAlign:"center",color:"#9ca3af",fontSize:11}}>
+                  <tr><td colSpan={COLS.length+1} style={{padding:30,textAlign:"center",color:"#1f2937",fontSize:11}}>
                     {metrics.length?"조건에 맞는 기업 없음":"수집 후 데이터가 표시됩니다"}
                   </td></tr>
                 )}
@@ -1243,17 +1242,17 @@ export default function PharmaDART() {
           </div>
           {[
             {keys:[{k:"totalRev",c:"#38bdf8",n:"합산매출(조)"}], title:"합산 매출 추이 (조원)", u:"조"},
-            {keys:[{k:"opMargin",c:"#4ade80",n:"영업이익률"},{k:"sgaRatio",c:"#fbbf24",n:"판관비율"},{k:"cogsRatio",c:"#f87171",n:"원가율"}], title:"평균 비용 구조 (%)", u:"%"},
+            {keys:[{k:"opMargin",c:"#16a34a",n:"영업이익률"},{k:"netMargin",c:"#7c3aed",n:"순이익률"}], title:"평균 이익률 (%)", u:"%"},
           ].map(({keys,title,u})=>(
             <div key={title} style={{background:"#f1f5f9",borderRadius:10,padding:"14px 16px",marginBottom:12,border:"1px solid #d1d5db"}}>
               <div style={{fontSize:11,fontWeight:700,marginBottom:12}}>{title}</div>
               <ResponsiveContainer width="100%" height={190}>
                 <LineChart data={trend}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb"/>
-                  <XAxis dataKey="year" stroke="#e5e7eb" tick={{fontSize:10,fill:"#374151"}}/>
-                  <YAxis stroke="#e5e7eb" tick={{fontSize:10,fill:"#374151"}} unit={u} width={42}/>
+                  <XAxis dataKey="year" stroke="#e5e7eb" tick={{fontSize:10,fill:"#1f2937"}}/>
+                  <YAxis stroke="#e5e7eb" tick={{fontSize:10,fill:"#1f2937"}} unit={u} width={42}/>
                   <Tooltip content={<Tip/>}/>
-                  <Legend wrapperStyle={{fontSize:10,color:"#374151"}}/>
+                  <Legend wrapperStyle={{fontSize:10,color:"#1f2937"}}/>
                   {keys.map(k=><Line key={k.k} type="monotone" dataKey={k.k} name={k.n} stroke={k.c} strokeWidth={2.5} dot={{r:3,fill:k.c}} connectNulls/>)}
                   <ReferenceLine y={0} stroke="#334155" strokeDasharray="3 3"/>
                 </LineChart>
