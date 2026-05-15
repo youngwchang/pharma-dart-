@@ -222,70 +222,115 @@ router.get('/employees', async (req, res) => {
    연간 모드:   ?corp_code=X&years=2016,2017,...&reprt_code=11011
    분기별 모드: ?corp_code=X&mode=quarterly&year_from=2024&year_to=2026&quarters=Q1,Q2,Q3,Q4
 ────────────────────────────────────────────────────────── */
+/* ──────────────────────────────────────────────────────────
+   GET /dart/batch
+   financial + employees 한 번에
+
+   연간 모드:   ?corp_code=X&mode=annual&years=2016,...&reprt_code=11011
+   분기별 모드: ?corp_code=X&mode=quarterly&year_from=2024&year_to=2026&quarters=Q1,Q2,Q3,Q4
+               → 독립 분기값 (누적 차분) 반환
+────────────────────────────────────────────────────────── */
 router.get('/batch', async (req, res) => {
   const { corp_code, mode='annual' } = req.query;
   if (!corp_code) return res.status(400).json({ error:'corp_code required' });
   if (!KEY())     return res.status(500).json({ error:'DART_API_KEY not set' });
 
-  // 기간 목록 생성: { key, bsns_year, reprt_code }[]
-  let periods = [];
-
-  if (mode === 'quarterly') {
-    const year_from  = parseInt(req.query.year_from || new Date().getFullYear());
-    const year_to    = parseInt(req.query.year_to   || new Date().getFullYear());
-    const qList      = (req.query.quarters || 'Q1,Q2,Q3,Q4').split(',').map(s=>s.trim().toUpperCase());
-    const qMap       = { Q1: REPRT.q1, Q2: REPRT.q2, Q3: REPRT.q3, Q4: REPRT.annual };
-    for (let y = year_from; y <= year_to; y++) {
-      for (const q of qList) {
-        if (qMap[q]) periods.push({ key:`${y}_${q}`, bsns_year:String(y), reprt_code:qMap[q] });
-      }
-    }
-  } else {
-    // 연간 모드
-    const years      = (req.query.years || '2016,2017,2018,2019,2020,2021,2022,2023,2024,2025').split(',').map(s=>s.trim());
-    const reprt_code = req.query.reprt_code || REPRT.annual;
-    periods = years.map(y => ({ key:y, bsns_year:y, reprt_code }));
-  }
-
   const result = {};
 
-  for (const p of periods) {
-    // ── financial
-    await wait(DELAY);
-    try {
-      const r = await axios.get(`${BASE}/fnlttSinglAcnt.json`, {
-        params: { crtfc_key:KEY(), corp_code, bsns_year:p.bsns_year, reprt_code:p.reprt_code },
-        timeout: 12000,
-      });
-      if (r.data.status==='000' && r.data.list?.length) {
-        result[p.key] = parseFinancial(r.data.list);
-      } else {
-        result[p.key] = null;
-      }
-    } catch { result[p.key] = null; }
+  /* ── 연간 모드 ── */
+  if (mode !== 'quarterly') {
+    const years      = (req.query.years || '2016,2017,2018,2019,2020,2021,2022,2023,2024,2025').split(',').map(s=>s.trim());
+    const reprt_code = req.query.reprt_code || REPRT.annual;
 
-    // ── employees
-    await wait(DELAY);
-    try {
-      const r = await axios.get(`${BASE}/empSttus.json`, {
-        params: { crtfc_key:KEY(), corp_code, bsns_year:p.bsns_year, reprt_code:p.reprt_code },
-        timeout: 8000,
-      });
-      if (r.data.status==='000' && r.data.list?.length) {
-        // 합계 행 탐지 (다양한 형태 대응)
-        const allRows = r.data.list;
-        const sumRows = allRows.filter(e =>
-          !e.fo_bbm ||
-          e.fo_bbm.includes('합계') ||
-          e.fo_bbm.trim() === '' ||
-          e.fo_bbm.trim() === '-'
-        );
-        const useRows = sumRows.length ? sumRows : allRows;
-        const total = useRows.reduce((s,e) => s + (toInt(e.tot_cnt)||0), 0);
-        if (result[p.key]) result[p.key].employees = total || null;
-        else result[p.key] = { employees: total || null };
-      }
-    } catch { /* 직원수 없어도 계속 */ }
+    for (const year of years) {
+      await wait(DELAY);
+      try {
+        const r = await axios.get(`${BASE}/fnlttSinglAcnt.json`, {
+          params: { crtfc_key:KEY(), corp_code, bsns_year:year, reprt_code },
+          timeout: 12000,
+        });
+        result[year] = (r.data.status==='000' && r.data.list?.length)
+          ? parseFinancial(r.data.list) : null;
+      } catch { result[year] = null; }
+
+      // 직원수
+      await wait(DELAY);
+      try {
+        const r = await axios.get(`${BASE}/empSttus.json`, {
+          params: { crtfc_key:KEY(), corp_code, bsns_year:year, reprt_code },
+          timeout: 8000,
+        });
+        if (r.data.status==='000' && r.data.list?.length) {
+          const rows  = r.data.list.filter(e => !e.fo_bbm||e.fo_bbm.includes('합계')||e.fo_bbm.trim()===''||e.fo_bbm.trim()==='-');
+          const total = (rows.length ? rows : r.data.list).reduce((s,e)=>s+(toInt(e.tot_cnt)||0),0);
+          if (result[year]) result[year].employees = total||null;
+        }
+      } catch { /* 직원수 없어도 계속 */ }
+    }
+    return res.json({ corp_code, mode, years: result });
+  }
+
+  /* ── 분기별 모드: 독립 분기값 = 누적 차분 ── */
+  const year_from = parseInt(req.query.year_from || new Date().getFullYear());
+  const year_to   = parseInt(req.query.year_to   || new Date().getFullYear());
+  const wantQ     = new Set((req.query.quarters||'Q1,Q2,Q3,Q4').split(',').map(s=>s.trim().toUpperCase()));
+
+  // P&L 항목 (누적→독립 차분 대상)
+  const PL_FIELDS = ['revenue','op_profit','net_income','sga','cogs'];
+  // B/S 항목 (기말 시점값, 차분 불필요)
+  const BS_FIELDS = ['assets','liabilities'];
+
+  const sub = (a, b) => {
+    // a - b, null 안전 처리
+    if (a == null) return null;
+    if (b == null) return a;
+    return a - b;
+  };
+
+  for (let y = year_from; y <= year_to; y++) {
+    const yr = String(y);
+
+    // 4개 보고서 순서대로 fetch
+    const fetched = {};
+    for (const [qKey, reprt_code] of [['Q1',REPRT.q1],['Q2',REPRT.q2],['Q3',REPRT.q3],['Q4',REPRT.annual]]) {
+      await wait(DELAY);
+      try {
+        const r = await axios.get(`${BASE}/fnlttSinglAcnt.json`, {
+          params: { crtfc_key:KEY(), corp_code, bsns_year:yr, reprt_code },
+          timeout: 12000,
+        });
+        fetched[qKey] = (r.data.status==='000' && r.data.list?.length)
+          ? parseFinancial(r.data.list) : null;
+      } catch { fetched[qKey] = null; }
+    }
+
+    // 독립 분기값 계산
+    const standalone = {
+      Q1: fetched.Q1,                                      // Q1 단독 = Q1 누적
+      Q2: (() => {                                          // Q2 단독 = 반기 - Q1
+        if (!fetched.Q2) return null;
+        const out = { ...fetched.Q2 };
+        PL_FIELDS.forEach(f => { out[f] = sub(fetched.Q2?.[f], fetched.Q1?.[f]); });
+        return out;
+      })(),
+      Q3: (() => {                                          // Q3 단독 = 3Q누적 - 반기
+        if (!fetched.Q3) return null;
+        const out = { ...fetched.Q3 };
+        PL_FIELDS.forEach(f => { out[f] = sub(fetched.Q3?.[f], fetched.Q2?.[f]); });
+        return out;
+      })(),
+      Q4: (() => {                                          // Q4 단독 = 연간 - 3Q누적
+        if (!fetched.Q4) return null;
+        const out = { ...fetched.Q4 };
+        PL_FIELDS.forEach(f => { out[f] = sub(fetched.Q4?.[f], fetched.Q3?.[f]); });
+        return out;
+      })(),
+    };
+
+    // 원하는 분기만 결과에 포함
+    for (const q of ['Q1','Q2','Q3','Q4']) {
+      if (wantQ.has(q)) result[`${yr}_${q}`] = standalone[q];
+    }
   }
 
   res.json({ corp_code, mode, years: result });
