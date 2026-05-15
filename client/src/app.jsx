@@ -353,13 +353,13 @@ function exportHTML(metrics, rawData, filtered, filterInfo, trend) {
   /* MAIN TABLE */
   .tbl-wrap{background:#0f172a;border-radius:10px;border:1px solid #1e293b;overflow-x:auto}
   table{width:100%;border-collapse:collapse;font-size:10px}
-  thead tr{border-bottom:2px solid #1e293b}
+  thead tr{border-bottom:2px solid #d1d5db}
   th{padding:8px 9px;text-align:right;color:#334155;font-weight:600;white-space:nowrap;font-size:9px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none}
   th.left{text-align:left}
   th:hover{color:#e2e8f0}
-  td{padding:5px 9px;text-align:right;font-family:monospace;border-bottom:1px solid #0a0f1a}
+  td{padding:5px 9px;text-align:right;font-family:monospace;border-bottom:1px solid #f8fafc}
   td.left{text-align:left;font-family:inherit}
-  tr:nth-child(even){background:#0a0f1a}
+  tr:nth-child(even){background:#f8fafc}
   tr:hover{background:#1e293b!important}
   .th-active{color:#38bdf8!important}
   /* COMPANY SECTIONS */
@@ -367,7 +367,7 @@ function exportHTML(metrics, rawData, filtered, filterInfo, trend) {
   .co-header{padding:12px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;border-bottom:1px solid #1e293b}
   .co-name{font-size:13px;font-weight:700;color:#f1f5f9}
   .co-kpis{display:flex;gap:8px;flex-wrap:wrap;margin:10px 16px}
-  .co-k{background:#0a0f1a;border-radius:5px;padding:4px 10px;font-size:9px}
+  .co-k{background:#f8fafc;border-radius:5px;padding:4px 10px;font-size:9px}
   .co-k-label{color:#334155;display:block;margin-bottom:1px}
   .co-k-val{font-family:monospace;font-weight:700}
   .co-body{padding:0 16px 14px}
@@ -524,11 +524,11 @@ ${filtered.map(m=>{
       ${[["CAGR",fp(m.cagr),m.cagr>=15?"#4ade80":m.cagr<0?"#f87171":"#38bdf8"],["최신매출",fb(m.latestRev),"#38bdf8"],["영업이익률",fp(m.opMargin),"#4ade80"],["판관비율",fp(m.sgaRatio),"#fbbf24"],["원가율",fp(m.cogsRatio),"#f87171"],["직원수",m.latestEmp?m.latestEmp.toLocaleString()+"명":"—","#a78bfa"]].map(([l,v,c])=>`<div class="co-k"><span class="co-k-label">${l}</span><span class="co-k-val" style="color:${c}">${v}</span></div>`).join("")}
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 10px;padding:0 0 6px">
-      <div style="background:#0a0f1a;border-radius:6px;padding:10px 12px">
+      <div style="background:#f8fafc;border-radius:6px;padding:10px 12px">
         <div style="font-size:9px;color:#475569;margin-bottom:6px">매출 추이 (억원)</div>
         ${revSpark}
       </div>
-      <div style="background:#0a0f1a;border-radius:6px;padding:10px 12px">
+      <div style="background:#f8fafc;border-radius:6px;padding:10px 12px">
         <div style="font-size:9px;color:#475569;margin-bottom:6px">영업이익률 추이 (%)</div>
         ${opSpark}
       </div>
@@ -541,7 +541,7 @@ ${filtered.map(m=>{
           <th>직원</th><th>영업이익률</th><th>판관비율</th><th>원가율</th>
         </tr></thead>
         <tbody>
-        ${rows.map((r,i)=>`<tr style="background:${i%2?"#070d18":"transparent"}">
+        ${rows.map((r,i)=>`<tr style="background:${i%2?"#f8fafc":"transparent"}">
           <td class="left" style="color:#38bdf8;font-weight:700">${r.y}</td>
           ${[r.revenue,r.op_profit,r.net_income,r.assets,r.liabilities,r.sga,r.cogs].map(v=>`<td>${v!=null?Math.round(v/1e8).toLocaleString():"—"}</td>`).join("")}
           <td style="color:#94a3b8">${r.employees?.toLocaleString()||"—"}</td>
@@ -767,7 +767,7 @@ function DetailLayout({metrics, rawData, selCompany, setSelCo}) {
                 padding:"2px 6px",fontSize:8,fontWeight:600,borderRadius:8,cursor:"pointer",
                 background:fType===t?(TYPE_COLORS[t]||"#38bdf8")+"33":"transparent",
                 color:fType===t?(TYPE_COLORS[t]||"#38bdf8"):"#334155",
-                border:`1px solid ${fType===t?(TYPE_COLORS[t]||"#38bdf8")+"55":"#1e293b"}`
+                border:`1px solid ${fType===t?(TYPE_COLORS[t]||"#38bdf8")+"55":"#d1d5db"}`
               }}>{t==="전체"?"ALL":t.split("·")[0]}</button>
             ))}
           </div>
@@ -795,8 +795,8 @@ function DetailLayout({metrics, rawData, selCompany, setSelCo}) {
                 style={{padding:"8px 10px",background:isActive?tc+"20":i%2?"#f8fafc":"#ffffff",
                   borderLeft:`3px solid ${isActive?tc:"transparent"}`,cursor:"pointer",
                   borderBottom:"1px solid #0d1526",transition:"all 0.1s"}}
-                onMouseEnter={e=>{if(!isActive)e.currentTarget.style.background="#1e293b"}}
-                onMouseLeave={e=>{if(!isActive)e.currentTarget.style.background=i%2?"#070d18":"transparent"}}
+                onMouseEnter={e=>{if(!isActive)e.currentTarget.style.background="#eff6ff"}}
+                onMouseLeave={e=>{if(!isActive)e.currentTarget.style.background=i%2?"#f8fafc":"#ffffff"}}
               >
                 <div style={{fontSize:11,fontWeight:isActive?700:500,color:isActive?tc:"#1f2937",
                   whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",marginBottom:2}}>{m.name}</div>
@@ -1022,16 +1022,16 @@ export default function PharmaDART() {
             <button
               onClick={()=>exportExcel(metrics,rawData,filtered,{type:fType,search,sortKey,sortDir})}
               disabled={!metrics.length}
-              style={{padding:"8px 14px",background:metrics.length?"#0f4c81":"#1e293b",color:metrics.length?"#7dd3fc":"#334155",
-                border:`1px solid ${metrics.length?"#1e40af":"#1e293b"}`,borderRadius:7,cursor:metrics.length?"pointer":"default",
+              style={{padding:"8px 14px",background:metrics.length?"#2563eb":"#e5e7eb",color:metrics.length?"#ffffff":"#9ca3af",
+                border:`1px solid ${metrics.length?"#1e40af":"#d1d5db"}`,borderRadius:7,cursor:metrics.length?"pointer":"default",
                 fontSize:11,fontWeight:700,boxShadow:metrics.length?"0 0 12px #1d4ed840":"none"}}>
               📊 Excel ({filtered.length}/{metrics.length})
             </button>
             <button
               onClick={()=>exportHTML(metrics,rawData,filtered,{type:fType,search,sortKey,sortDir},trend)}
               disabled={!metrics.length}
-              style={{padding:"8px 14px",background:metrics.length?"#1a1040":"#1e293b",color:metrics.length?"#c4b5fd":"#334155",
-                border:`1px solid ${metrics.length?"#6d28d9":"#1e293b"}`,borderRadius:7,cursor:metrics.length?"pointer":"default",
+              style={{padding:"8px 14px",background:metrics.length?"#7c3aed":"#e5e7eb",color:metrics.length?"#ffffff":"#9ca3af",
+                border:`1px solid ${metrics.length?"#6d28d9":"#d1d5db"}`,borderRadius:7,cursor:metrics.length?"pointer":"default",
                 fontSize:11,fontWeight:700,boxShadow:metrics.length?"0 0 12px #6d28d940":"none"}}>
               🖨 HTML 보고서
             </button>
@@ -1051,7 +1051,7 @@ export default function PharmaDART() {
               style={{padding:"5px 14px",fontSize:11,fontWeight:600,borderRadius:6,cursor:"pointer",
                 background:periodMode===m.v?"#1e3a5f":"#f1f5f9",
                 color:periodMode===m.v?"#38bdf8":"#475569",
-                border:`1px solid ${periodMode===m.v?"#1d4ed8":"#1e293b"}`,transition:"all 0.15s"}}>
+                border:`1px solid ${periodMode===m.v?"#1d4ed8":"#d1d5db"}`,transition:"all 0.15s"}}>
               {m.l}
             </button>
           ))}
@@ -1062,7 +1062,7 @@ export default function PharmaDART() {
               style={{padding:"5px 12px",fontSize:10,fontWeight:600,borderRadius:6,cursor:"pointer",
                 background:reprtCode===r.code?"#0c2340":"#f1f5f9",
                 color:reprtCode===r.code?"#7dd3fc":"#334155",
-                border:`1px solid ${reprtCode===r.code?"#0369a1":"#1e293b"}`,transition:"all 0.15s"}}>
+                border:`1px solid ${reprtCode===r.code?"#0369a1":"#d1d5db"}`,transition:"all 0.15s"}}>
               {r.short}
             </button>
           ))}
@@ -1080,7 +1080,7 @@ export default function PharmaDART() {
               style={{padding:"5px 12px",fontSize:10,fontWeight:600,borderRadius:6,cursor:"pointer",
                 background:quarters.includes(q)?"#1a2e1a":"#f1f5f9",
                 color:quarters.includes(q)?"#4ade80":"#334155",
-                border:`1px solid ${quarters.includes(q)?"#166534":"#1e293b"}`,transition:"all 0.15s"}}>
+                border:`1px solid ${quarters.includes(q)?"#166534":"#d1d5db"}`,transition:"all 0.15s"}}>
               {label}
             </button>
           ))}
@@ -1153,8 +1153,8 @@ export default function PharmaDART() {
       <div style={{display:"flex",gap:2,marginBottom:16,background:"#f1f5f9",padding:4,borderRadius:8,border:"1px solid #d1d5db"}}>
         {TABS_DEF.map(t=>(
           <button key={t.id} onClick={()=>setTab(t.id)}
-            style={{flex:1,padding:"8px",background:tab===t.id?"#1e293b":"transparent",color:tab===t.id?"#e2e8f0":"#475569",
-              border:tab===t.id?"1px solid #334155":"1px solid transparent",borderRadius:6,cursor:"pointer",fontSize:12,
+            style={{flex:1,padding:"8px",background:tab===t.id?"#2563eb":"transparent",color:tab===t.id?"#ffffff":"#374151",
+              border:tab===t.id?"1px solid #2563eb":"1px solid transparent",borderRadius:6,cursor:"pointer",fontSize:12,
               fontWeight:tab===t.id?700:400,transition:"all 0.15s"}}>{t.label}</button>
         ))}
       </div>
@@ -1171,7 +1171,7 @@ export default function PharmaDART() {
                   padding:"4px 11px",fontSize:10,fontWeight:600,borderRadius:20,cursor:"pointer",
                   background:fType===t?(TYPE_COLORS[t]||"#38bdf8")+"33":"#0f172a",
                   color:fType===t?(TYPE_COLORS[t]||"#38bdf8"):"#475569",
-                  border:`1px solid ${fType===t?(TYPE_COLORS[t]||"#38bdf8")+"55":"#1e293b"}`
+                  border:`1px solid ${fType===t?(TYPE_COLORS[t]||"#38bdf8")+"55":"#d1d5db"}`
                 }}>{t}</button>
               ))}
             </div>
@@ -1180,7 +1180,7 @@ export default function PharmaDART() {
           <div style={{background:"#f1f5f9",borderRadius:10,border:"1px solid #d1d5db",overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
               <thead>
-                <tr style={{borderBottom:"2px solid #d1d5db"}}>
+                <tr style={{borderBottom:"2px solid #e2e8f0"}}>
                   {COLS.map(c=>(
                     <th key={c.key} className="th" onClick={()=>handleSort(c.key)}
                       style={{padding:"8px 9px",textAlign:c.align||"right",color:sortKey===c.key?"#2563eb":"#374151",fontWeight:600,
@@ -1193,25 +1193,25 @@ export default function PharmaDART() {
               </thead>
               <tbody>
                 {filtered.map((m,i)=>(
-                  <tr key={m.name} style={{borderBottom:"1px solid #0a0f1a",background:i%2?"#0a0f1a":"transparent"}}
-                    onMouseEnter={e=>e.currentTarget.style.background="#1e293b"}
-                    onMouseLeave={e=>e.currentTarget.style.background=i%2?"#0a0f1a":"transparent"}>
+                  <tr key={m.name} style={{borderBottom:"1px solid #e5e7eb", background:i%2?"#f8fafc":"#ffffff", transition:"background 0.1s"}}
+                    onMouseEnter={e=>e.currentTarget.style.background="#eff6ff"}
+                    onMouseLeave={e=>e.currentTarget.style.background=i%2?"#f8fafc":"#ffffff"}>
                     {COLS.map(c=>{
                       const v=m[c.key];
                       const col=c.color?c.color(v):null;
                       return (
-                        <td key={c.key} style={{padding:"5px 9px",textAlign:c.align||"right",
+                        <td key={c.key} style={{padding:"7px 10px",textAlign:c.align||"right",
                           fontFamily:c.align==="left"?"inherit":"'IBM Plex Mono',monospace",
-                          color:col||"#e2e8f0",fontWeight:c.key==="name"?700:400}}>
+                          color:col||"#0f172a",fontWeight:c.key==="name"?700:400}}>
                           {c.key==="type"
-                            ?<span style={{background:(TYPE_COLORS[v]||"#94a3b8")+"22",color:TYPE_COLORS[v]||"#94a3b8",borderRadius:3,padding:"1px 5px",fontSize:9,fontWeight:700}}>{v}</span>
+                            ?<span style={{background:(TYPE_COLORS[v]||"#64748b")+"18",color:TYPE_COLORS[v]||"#64748b",borderRadius:4,padding:"2px 7px",fontSize:9,fontWeight:700}}>{v}</span>
                             :c.fmt(v)}
                         </td>
                       );
                     })}
-                    <td style={{padding:"5px 9px",textAlign:"center"}}>
+                    <td style={{padding:"7px 10px",textAlign:"center"}}>
                       <button onClick={()=>{setSelCo(m.name);setTab("detail");}}
-                        style={{background:"#e5e7eb",border:"none",borderRadius:4,color:"#38bdf8",fontSize:10,cursor:"pointer",padding:"2px 7px"}}>→</button>
+                        style={{background:"#e0e7ff",border:"none",borderRadius:4,color:"#2563eb",fontSize:10,cursor:"pointer",padding:"3px 9px",fontWeight:600}}>→</button>
                     </td>
                   </tr>
                 ))}
