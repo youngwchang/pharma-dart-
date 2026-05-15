@@ -53,10 +53,10 @@ function parseFinancial(list) {
   const IS     = list.filter(i => i.sj_div==='IS' && i.fs_div===fsDiv);
   const BS     = list.filter(i => i.sj_div==='BS' && i.fs_div===fsDiv);
 
-  // 판관비: 공백 유무 모두 대응 + 대체 명칭
+  // 판관비: 공백 없는 버전이 DART 표준 계정명
   const sga = firstMatch(IS,
     ['ifrs-full_SellingGeneralAndAdministrativeExpense','dart_Sga','dart_SellingGeneralAdministrativeExpenses'],
-    ['판매비와 관리비','판매비와관리비','판매비 및 관리비','판매비및관리비','판관비','판매관리비','영업비용']
+    ['판매비와관리비','판매비와 관리비','판매비 및 관리비','판매비및관리비','판관비','판매관리비','영업비용']
   ) ?? sumMatch(IS, [['판매비'],['관리비'],['영업관리비']]);
 
   // 매출원가: 제약사는 제품+상품 합산인 경우 있음
