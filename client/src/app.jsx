@@ -1068,9 +1068,9 @@ export default function PharmaDART() {
           {/* 분기별 모드: 분기 선택 */}
           {periodMode==="quarterly" && [
             {q:"Q1", label:"1Q (1~3월)"},
-            {q:"Q2", label:"2Q (1~6월 누적)"},
-            {q:"Q3", label:"3Q (1~9월 누적)"},
-            {q:"Q4", label:"4Q (연간=연간보고서)"},
+            {q:"Q2", label:"2Q (4~6월)"},
+            {q:"Q3", label:"3Q (7~9월)"},
+            {q:"Q4", label:"4Q (연간 전체)"},
           ].map(({q, label})=>(
             <button key={q} onClick={()=>setQuarters(prev=>
               prev.includes(q) ? prev.filter(x=>x!==q) : [...prev,q].sort()
