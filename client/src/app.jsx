@@ -443,7 +443,7 @@ ${[
 <h2>🏷 업종별 평균 지표</h2>
 <div class="type-grid">
 ${typeStats.map(t=>`
-  <div class="type-card" style="--c:${TC[t.type]||"#94a3b8"}">
+  <div class="type-card" style="--c:${TC[t.type]||"#64748b"}">
     <div class="type-name">${t.type} <span style="font-size:9px;color:#334155;font-weight:400">(${t.count}개사)</span></div>
     ${[["평균 CAGR",fp(t.cagr)],["영업이익률",fp(t.opM)],["순이익률",fp(t.netM)||"—"]].map(([k,v])=>`
     <div class="type-row"><span class="type-key">${k}</span><span class="type-val">${v}</span></div>`).join("")}
@@ -474,16 +474,16 @@ ${typeStats.map(t=>`
 </thead>
 <tbody>
 ${filtered.map((m,i)=>{
-  const tc = TC[m.type]||"#94a3b8";
-  const revSpark = sparkline(YEARS_ALL.map(y=>rawData[m.name]?.years?.[String(y)]?.revenue!=null?rawData[m.name].years[String(y)].revenue/1e8:null),"#38bdf8",100,24);
+  const tc = TC[m.type]||"#64748b";
+  const revSpark = sparkline(YEARS_ALL.map(y=>rawData[m.name]?.years?.[String(y)]?.revenue!=null?rawData[m.name].years[String(y)].revenue/1e8:null),"#2563eb",100,24);
   return `<tr data-cagr="${m.cagr||0}" data-rev="${m.latestRevB||0}">
-  <td style="color:#334155">${i+1}</td>
-  <td class="left" style="font-weight:700;color:#f1f5f9">${m.name}</td>
+  <td style="color:#6b7280">${i+1}</td>
+  <td class="left" style="font-weight:700;color:#111827">${m.name}</td>
   <td class="left"><span class="tag" style="background:${tc}22;color:${tc}">${m.type}</span></td>
-  <td class="left" style="color:#475569;font-size:9px">${m.market||""}</td>
-  <td style="font-weight:700;color:${m.cagr>=20?"#4ade80":m.cagr>=5?"#e2e8f0":m.cagr<0?"#f87171":"#94a3b8"}">${fp(m.cagr)}</td>
+  <td class="left" style="color:#6b7280;font-size:10px">${m.market||""}</td>
+  <td style="font-weight:700;color:${m.cagr>=20?"#16a34a":m.cagr>=5?"#111827":m.cagr<0?"#dc2626":"#6b7280"}">${fp(m.cagr)}</td>
   <td>${m.latestRevB!=null?m.latestRevB.toLocaleString()+"억":"—"}</td>
-  <td style="color:${m.opMargin>15?"#4ade80":m.opMargin<0?"#f87171":"#e2e8f0"}">${fp(m.opMargin)}</td>
+  <td style="color:${m.opMargin>15?"#16a34a":m.opMargin<0?"#dc2626":"#111827"}">${fp(m.opMargin)}</td>
   <td>${fp(m.netMargin)}</td>
   <td>${fp(m.debtRatio)}</td>
   <td>${revSpark}</td>
@@ -497,26 +497,26 @@ ${filtered.map((m,i)=>{
 <div class="section">
 <h2>🏢 기업별 상세 데이터 (현재 뷰 기준 · 클릭하여 펼치기)</h2>
 ${filtered.map(m=>{
-  const tc = TC[m.type]||"#94a3b8";
+  const tc = TC[m.type]||"#64748b";
   const rows = YEARS_ALL.map(y=>{
     const yd = rawData[m.name]?.years?.[String(y)];
     return yd?.revenue>0?{y,...yd}:null;
   }).filter(Boolean);
   if(!rows.length) return "";
-  const revSpark = sparkline(rows.map(r=>r.revenue/1e8),"#38bdf8",300,40);
-  const opSpark  = sparkline(rows.map(r=>r.op_profit!=null&&r.revenue>0?r.op_profit/r.revenue*100:null),"#4ade80",300,40);
+  const revSpark = sparkline(rows.map(r=>r.revenue/1e8),"#2563eb",300,40);
+  const opSpark  = sparkline(rows.map(r=>r.op_profit!=null&&r.revenue>0?r.op_profit/r.revenue*100:null),"#16a34a",300,40);
   return `
 <div class="co-section" id="co-${m.name.replace(/\s/g,'-')}">
   <div class="co-header" onclick="toggle(this)">
     <div>
       <span class="co-name">${m.name}</span>
       <span class="tag" style="background:${tc}22;color:${tc};margin-left:8px">${m.type}</span>
-      <span style="font-size:9px;color:#475569;margin-left:6px">${m.market} · ${m.dataYears}개년</span>
+      <span style="font-size:9px;color:#6b7280;margin-left:6px">${m.market} · ${m.dataYears}개년</span>
     </div>
     <div style="display:flex;gap:16px;align-items:center">
-      <span style="font-family:monospace;font-size:11px;font-weight:700;color:${m.cagr>=20?"#4ade80":m.cagr<0?"#f87171":"#94a3b8"}">CAGR ${fp(m.cagr)}</span>
+      <span style="font-family:monospace;font-size:11px;font-weight:700;color:${m.cagr>=20?"#16a34a":m.cagr<0?"#dc2626":"#374151"}">CAGR ${fp(m.cagr)}</span>
       <span style="font-family:monospace;font-size:11px;color:#2563eb">${fb(m.latestRev)}</span>
-      <span style="color:#334155;font-size:14px" class="toggle-arrow">▾</span>
+      <span style="color:#374151;font-size:14px" class="toggle-arrow">▾</span>
     </div>
   </div>
   <div class="co-body">
@@ -544,7 +544,7 @@ ${filtered.map(m=>{
         ${rows.map((r,i)=>`<tr style="background:${i%2?"#f8fafc":"transparent"}">
           <td class="left" style="color:#2563eb;font-weight:700">${r.y}</td>
           ${[r.revenue,r.op_profit,r.net_income,r.assets,r.liabilities].map(v=>`<td>${v!=null?Math.round(v/1e8).toLocaleString():"—"}</td>`).join("")}
-          <td style="color:${r.op_profit/r.revenue>0.15?"#4ade80":r.op_profit/r.revenue<0?"#f87171":"#e2e8f0"}">${r.op_profit!=null&&r.revenue>0?`${(r.op_profit/r.revenue*100).toFixed(1)}%`:"—"}</td>
+          <td style="color:${r.op_profit!=null&&r.revenue>0?(r.op_profit/r.revenue>0.15?"#16a34a":r.op_profit/r.revenue<0?"#dc2626":"#111827"):"#111827"}">${r.op_profit!=null&&r.revenue>0?`${(r.op_profit/r.revenue*100).toFixed(1)}%`:"—"}</td>
         </tr>`).join("")}
         </tbody>
       </table>
@@ -568,7 +568,7 @@ ${filtered.map(m=>{
   <input class="toc-search" id="tocSearch" placeholder="기업명 검색..." oninput="filterTOC(this.value)"/>
   <div class="toc-list" id="tocList">
     ${filtered.map(m=>`
-    <a class="toc-item" href="#co-${m.name.replace(/\s/g,'-')}" onclick="tocJump(this)" data-name="${m.name}">
+    <a class="toc-item" href="#co-${m.name.replace(/\s/g,'-')}" onclick="return tocJump(this)" data-name="${m.name}">
       <span>${m.name}</span>
       <span style="display:flex;gap:6px;align-items:center">
         <span class="toc-type" style="background:${({"의약품·제약":"#dbeafe","바이오·제약":"#dcfce7","의료기기":"#ede9fe"})[m.type]||"#f3f4f6"};color:${({"의약품·제약":"#1d4ed8","바이오·제약":"#16a34a","의료기기":"#6d28d9"})[m.type]||"#374151"}">${m.type.split("·")[0]}</span>
