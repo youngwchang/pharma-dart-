@@ -17,7 +17,7 @@ import _ from "lodash";
 /* ─────────────────────────────────────────
    CONFIG  (Render.com 서버 URL)
 ───────────────────────────────────────── */
-const PROXY = "https://hdp-bd-report.onrender.com/dart";
+const PROXY = "/dart";
 
 /* ─────────────────────────────────────────
    제약/바이오 상장사 목록 (~200개)
@@ -1007,7 +1007,11 @@ export default function PharmaDART() {
             </h1>
             <p style={{color:"#334155",margin:"4px 0 0",fontSize:11}}>
               DART API 직접 호출 · {PHARMA_LIST.length}개사 대상
-              {collectedPeriod && ` · ${collectedPeriod.yearFrom}~${collectedPeriod.yearTo} ${collectedPeriod.reprtInfo.short}`}
+              {collectedPeriod && ` · ${collectedPeriod.yearFrom}~${collectedPeriod.yearTo} ${
+                collectedPeriod.mode==="quarterly"
+                  ? `분기(${(collectedPeriod.quarters||[]).join(",")})`
+                  : REPORT_TYPES.find(r=>r.code===collectedPeriod.reprtCode)?.short||"연간"
+              }`}
             </p>
           </div>
           <div style={{display:"flex",gap:8}}>
