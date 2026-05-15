@@ -609,23 +609,24 @@ function sortTable(col) {
 const Tip = ({ active, payload, label }) => {
   if (!active||!payload?.length) return null;
   return (
-    <div style={{background:"#f1f5f9",border:"1px solid #d1d5db",borderRadius:6,padding:"8px 12px",fontSize:11}}>
-      <div style={{color:"#6b7280",marginBottom:4}}>{label}</div>
+    <div style={{background:"#ffffff",border:"1px solid #e2e8f0",borderRadius:8,padding:"10px 14px",fontSize:11,boxShadow:"0 4px 16px rgba(0,0,0,0.08)"}}>
+      <div style={{color:"#6b7280",marginBottom:6,fontWeight:600}}>{label}</div>
       {payload.map((p,i)=>(
-        <div key={i} style={{display:"flex",justifyContent:"space-between",gap:10,color:p.color||"#e2e8f0"}}>
+        <div key={i} style={{display:"flex",justifyContent:"space-between",gap:12}}>
           <span style={{color:"#6b7280"}}>{p.name}</span>
-          <b>{typeof p.value==="number"?p.value.toFixed(1):p.value}</b>
+          <b style={{color:p.color||"#0f172a"}}>{typeof p.value==="number"?p.value.toFixed(1):p.value}</b>
         </div>
       ))}
     </div>
   );
 };
 
-const Kpi = ({label,value,color="#38bdf8",sub}) => (
-  <div style={{background:"#f1f5f9",borderRadius:8,padding:"12px 14px",borderTop:`2px solid ${color}`,flex:1,minWidth:100}}>
-    <div style={{fontSize:9,color:"#9ca3af",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:5}}>{label}</div>
-    <div style={{fontSize:18,fontWeight:800,color:"#0f172a",fontFamily:"'IBM Plex Mono',monospace",lineHeight:1}}>{value}</div>
-    {sub&&<div style={{fontSize:9,color:"#9ca3af",marginTop:3}}>{sub}</div>}
+const Kpi = ({label, value, color="#2563eb", sub}) => (
+  <div style={{background:"#ffffff",borderRadius:8,padding:"13px 16px",flex:1,minWidth:110,
+    boxShadow:"0 1px 4px rgba(0,0,0,0.08)",border:"1px solid #e2e8f0",borderTop:`3px solid ${color}`}}>
+    <div style={{fontSize:9,color:"#9ca3af",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:6}}>{label}</div>
+    <div style={{fontSize:20,fontWeight:800,color:"#0f172a",fontFamily:"'IBM Plex Mono',monospace",lineHeight:1}}>{value}</div>
+    {sub&&<div style={{fontSize:9,color:"#9ca3af",marginTop:4}}>{sub}</div>}
   </div>
 );
 
@@ -635,17 +636,12 @@ const Kpi = ({label,value,color="#38bdf8",sub}) => (
 function CompanyDetail({name, d, metrics}) {
   const m = metrics.find(x=>x.name===name);
   if (!m) return <div style={{color:"#374151",padding:20}}>데이터 없음</div>;
-  const tc = TYPE_COLORS[m.type]||"#94a3b8";
+  const tc = TYPE_COLORS[m.type]||"#64748b";
   const revData  = m.rows.map(r=>({year:r.year,"매출(억)":+(r.revenue/1e8).toFixed(0)}));
   const margData = m.rows.map(r=>({year:r.year,
     "영업이익률": r.op_profit!=null&&r.revenue>0?+(r.op_profit/r.revenue*100).toFixed(1):null,
     "순이익률":   r.net_income!=null&&r.revenue>0?+(r.net_income/r.revenue*100).toFixed(1):null,
   }));
-  const costData = m.rows.map(r=>({year:r.year,
-    "판관비율": r.sga>0&&r.revenue>0?+(r.sga/r.revenue*100).toFixed(1):null,
-    "원가율":   r.cogs>0&&r.revenue>0?+(r.cogs/r.revenue*100).toFixed(1):null,
-  }));
-  const empData = m.rows.filter(r=>r.employees).map(r=>({year:r.year,"직원수":r.employees}));
 
   return (
     <div>
@@ -653,68 +649,72 @@ function CompanyDetail({name, d, metrics}) {
         <div>
           <div style={{fontSize:18,fontWeight:900,color:"#0f172a"}}>{name}</div>
           <div style={{display:"flex",gap:6,marginTop:4}}>
-            {[m.type,m.market,`데이터 ${m.dataYears}년`].map(t=>(
+            {[m.type,m.market,`데이터 ${m.dataYears}개`].map(t=>(
               <span key={t} style={{background:"#e5e7eb",color:t===m.type?tc:"#64748b",borderRadius:4,padding:"2px 7px",fontSize:9,fontWeight:700}}>{t}</span>
             ))}
           </div>
         </div>
       </div>
+
+      {/* KPI 카드 */}
       <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>
-        <Kpi label="CAGR"    value={fmtP(m.cagr)}     color={m.cagr>=15?"#4ade80":m.cagr<0?"#f87171":"#38bdf8"}/>
-        <Kpi label="최신매출" value={fmtB(m.latestRev)} color="#38bdf8"/>
-        <Kpi label="영업이익률" value={fmtP(m.opMargin)} color="#4ade80"/>
-        <Kpi label="판관비율"  value={fmtP(m.sgaRatio)}  color="#fbbf24"/>
-        <Kpi label="원가율"   value={fmtP(m.cogsRatio)} color="#f87171"/>
-        <Kpi label="직원수"   value={m.latestEmp?`${m.latestEmp.toLocaleString()}명`:"—"} color="#a78bfa"/>
+        <Kpi label="CAGR"      value={m.cagr!=null?fmtP(m.cagr):"—"} color={m.cagr>=15?"#16a34a":m.cagr<0?"#dc2626":"#2563eb"}/>
+        <Kpi label="최신매출"   value={fmtB(m.latestRev)}              color="#2563eb"/>
+        <Kpi label="영업이익률" value={fmtP(m.opMargin)}               color="#16a34a"/>
+        <Kpi label="순이익률"   value={fmtP(m.netMargin)}              color="#7c3aed"/>
+        <Kpi label="판관비율"   value={fmtP(m.sgaRatio)}               color="#b45309"/>
+        <Kpi label="부채비율"   value={fmtP(m.debtRatio)}              color="#ea580c"/>
       </div>
+
+      {/* 차트 2개 */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
         {[
-          {data:revData,  lines:[{k:"매출(억)",  c:"#38bdf8"}], title:"매출 추이",    u:"억"},
-          {data:margData, lines:[{k:"영업이익률",c:"#4ade80"},{k:"순이익률",c:"#a78bfa"}], title:"이익률 (%)", u:"%"},
-          {data:costData, lines:[{k:"판관비율",  c:"#fbbf24"},{k:"원가율",  c:"#f87171"}], title:"비용구조 (%)",u:"%"},
-          {data:empData,  lines:[{k:"직원수",    c:"#94a3b8"}], title:"직원수",       u:"명"},
+          {data:revData,  lines:[{k:"매출(억)",  c:"#2563eb"}], title:"매출 추이 (억원)", u:"억"},
+          {data:margData, lines:[{k:"영업이익률",c:"#16a34a"},{k:"순이익률",c:"#7c3aed"}], title:"이익률 추이 (%)", u:"%"},
         ].map(({data,lines,title,u})=>(
-          <div key={title} style={{background:"#f1f5f9",borderRadius:8,padding:"10px 12px",border:"1px solid #d1d5db"}}>
-            <div style={{fontSize:10,fontWeight:700,color:"#6b7280",marginBottom:8}}>{title}</div>
-            <ResponsiveContainer width="100%" height={140}>
+          <div key={title} style={{background:"#f8fafc",borderRadius:8,padding:"12px 14px",border:"1px solid #e2e8f0"}}>
+            <div style={{fontSize:11,fontWeight:700,color:"#374151",marginBottom:10}}>{title}</div>
+            <ResponsiveContainer width="100%" height={160}>
               <LineChart data={data}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb"/>
-                <XAxis dataKey="year" stroke="#e5e7eb" tick={{fontSize:9,fill:"#374151"}}/>
-                <YAxis stroke="#e5e7eb" tick={{fontSize:9,fill:"#374151"}} unit={u} width={40}/>
+                <XAxis dataKey="year" stroke="#e5e7eb" tick={{fontSize:9,fill:"#6b7280"}}/>
+                <YAxis stroke="#e5e7eb" tick={{fontSize:9,fill:"#6b7280"}} unit={u} width={44}/>
                 <Tooltip content={<Tip/>}/>
-                {lines.map(l=><Line key={l.k} type="monotone" dataKey={l.k} stroke={l.c} strokeWidth={2} dot={{r:2,fill:l.c}} connectNulls/>)}
+                <Legend wrapperStyle={{fontSize:10,color:"#6b7280"}}/>
+                {lines.map(l=><Line key={l.k} type="monotone" dataKey={l.k} stroke={l.c} strokeWidth={2.5} dot={{r:3,fill:l.c}} connectNulls/>)}
               </LineChart>
             </ResponsiveContainer>
           </div>
         ))}
       </div>
-      {/* raw table */}
-      <div style={{background:"#f1f5f9",borderRadius:8,border:"1px solid #d1d5db",overflowX:"auto"}}>
-        <div style={{fontSize:10,fontWeight:700,color:"#374151",padding:"8px 12px",borderBottom:"1px solid #d1d5db"}}>연도별 원시 데이터</div>
-        <table style={{width:"100%",borderCollapse:"collapse",fontSize:10}}>
+
+      {/* 연도별 원시 데이터 */}
+      <div style={{background:"#f8fafc",borderRadius:8,border:"1px solid #e2e8f0",overflowX:"auto"}}>
+        <div style={{fontSize:11,fontWeight:700,color:"#374151",padding:"10px 14px",borderBottom:"1px solid #e2e8f0"}}>연도별 상세 데이터</div>
+        <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
           <thead>
-            <tr>{["연도","매출(억)","영업이익","순이익","자산","부채","판관비","원가","직원","영업익률","판관비율","원가율"].map(h=>(
-              <th key={h} style={{padding:"6px 9px",textAlign:"right",color:"#9ca3af",fontWeight:600,borderBottom:"1px solid #d1d5db",fontSize:9,whiteSpace:"nowrap"}}>{h}</th>
+            <tr>{["연도","매출(억)","영업이익(억)","순이익(억)","자산(억)","부채(억)","영업이익률","순이익률","부채비율"].map(h=>(
+              <th key={h} style={{padding:"7px 10px",textAlign:"right",color:"#9ca3af",fontWeight:600,borderBottom:"1px solid #e2e8f0",fontSize:9,whiteSpace:"nowrap"}}>{h}</th>
             ))}</tr>
           </thead>
           <tbody>
             {m.rows.map((r,i)=>(
-              <tr key={r.year} style={{background:i%2?"#070d18":"transparent",borderBottom:"1px solid #e5e7eb"}}>
-                <td style={{padding:"5px 9px",fontWeight:700,color:"#38bdf8",fontFamily:"monospace",textAlign:"right"}}>{r.year}</td>
-                {[r.revenue,r.op_profit,r.net_income,r.assets,r.liabilities,r.sga,r.cogs].map((v,j)=>(
-                  <td key={j} style={{padding:"5px 9px",fontFamily:"monospace",textAlign:"right",color:"#0f172a"}}>
+              <tr key={r.year} style={{background:i%2?"#f1f5f9":"#ffffff",borderBottom:"1px solid #e5e7eb"}}>
+                <td style={{padding:"6px 10px",fontWeight:700,color:"#2563eb",fontFamily:"monospace",textAlign:"right"}}>{r.year}</td>
+                {[r.revenue,r.op_profit,r.net_income,r.assets,r.liabilities].map((v,j)=>(
+                  <td key={j} style={{padding:"6px 10px",fontFamily:"monospace",textAlign:"right",color:"#0f172a"}}>
                     {v!=null?Math.round(v/1e8).toLocaleString():"—"}
                   </td>
                 ))}
-                <td style={{padding:"5px 9px",fontFamily:"monospace",textAlign:"right",color:"#6b7280"}}>{r.employees?.toLocaleString()||"—"}</td>
-                <td style={{padding:"5px 9px",fontFamily:"monospace",textAlign:"right",color:r.op_profit/r.revenue>0.15?"#4ade80":r.op_profit/r.revenue<0?"#f87171":"#e2e8f0"}}>
+                <td style={{padding:"6px 10px",fontFamily:"monospace",textAlign:"right",
+                  color:r.op_profit/r.revenue>0.15?"#16a34a":r.op_profit/r.revenue<0?"#dc2626":"#0f172a"}}>
                   {r.op_profit!=null&&r.revenue>0?`${(r.op_profit/r.revenue*100).toFixed(1)}%`:"—"}
                 </td>
-                <td style={{padding:"5px 9px",fontFamily:"monospace",textAlign:"right",color:"#fbbf24"}}>
-                  {r.sga>0&&r.revenue>0?`${(r.sga/r.revenue*100).toFixed(1)}%`:"—"}
+                <td style={{padding:"6px 10px",fontFamily:"monospace",textAlign:"right",color:"#7c3aed"}}>
+                  {r.net_income!=null&&r.revenue>0?`${(r.net_income/r.revenue*100).toFixed(1)}%`:"—"}
                 </td>
-                <td style={{padding:"5px 9px",fontFamily:"monospace",textAlign:"right",color:"#f87171"}}>
-                  {r.cogs>0&&r.revenue>0?`${(r.cogs/r.revenue*100).toFixed(1)}%`:"—"}
+                <td style={{padding:"6px 10px",fontFamily:"monospace",textAlign:"right",color:"#ea580c"}}>
+                  {r.assets>0&&r.liabilities>0?`${(r.liabilities/r.assets*100).toFixed(1)}%`:"—"}
                 </td>
               </tr>
             ))}
@@ -829,12 +829,14 @@ const COLS = [
   {key:"name",       label:"기업명",     w:130, align:"left", fmt:v=>v},
   {key:"type",       label:"업종",       w:90,  align:"left", fmt:v=>v},
   {key:"market",     label:"시장",       w:65,  align:"left", fmt:v=>v||"—"},
-  {key:"cagr",       label:"CAGR",       w:75,  fmt:v=>v!=null?fmtP(v):"—", color:v=>v>=20?"#4ade80":v>=5?"#e2e8f0":v<0?"#f87171":"#94a3b8"},
+  {key:"cagr",       label:"CAGR",       w:75,  fmt:v=>v!=null?fmtP(v):"—",
+    color:v=>v>=20?"#16a34a":v>=5?"#0f172a":v<0?"#dc2626":"#64748b"},
   {key:"latestRevB", label:"최신매출(억)",w:105, fmt:v=>v!=null?`${v.toLocaleString()}억`:"—"},
-  {key:"opMargin",   label:"영업이익률", w:85,  fmt:v=>fmtP(v), color:v=>v>15?"#4ade80":v<0?"#f87171":null},
+  {key:"opMargin",   label:"영업이익률", w:85,
+    fmt:v=>fmtP(v), color:v=>v>15?"#16a34a":v<0?"#dc2626":"#0f172a"},
   {key:"netMargin",  label:"순이익률",   w:80,  fmt:v=>fmtP(v)},
-  {key:"latestSgaB", label:"판관비(억)", w:90,  fmt:v=>v!=null?`${v.toLocaleString()}억`:"—", color:()=>"#fbbf24"},
-  {key:"sgaRatio",   label:"판관비율",   w:80,  fmt:v=>fmtP(v), color:v=>v!=null?"#fbbf24":null},
+  {key:"sgaRatio",   label:"판관비율",   w:80,  fmt:v=>fmtP(v),
+    color:v=>v!=null?"#b45309":null},
   {key:"debtRatio",  label:"부채비율",   w:80,  fmt:v=>fmtP(v)},
   {key:"dataYears",  label:"데이터",     w:65,  fmt:v=>`${v}개`},
 ];
@@ -996,7 +998,7 @@ export default function PharmaDART() {
     <div style={{background:"#ffffff",minHeight:"100vh",color:"#0f172a",
       fontFamily:"'Pretendard','Apple SD Gothic Neo',sans-serif",padding:"20px 18px",maxWidth:1140,margin:"0 auto"}}>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&display=swap"/>
-      <style>{`*::-webkit-scrollbar{width:5px;height:5px}*::-webkit-scrollbar-track{background:#f1f5f9}*::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:3px}.th{cursor:pointer;user-select:none}.th:hover{color:#e2e8f0!important}`}</style>
+      <style>{`*{box-sizing:border-box}*::-webkit-scrollbar{width:5px;height:5px}*::-webkit-scrollbar-track{background:#f1f5f9}*::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:3px}.th{cursor:pointer;user-select:none}.th:hover{color:#e2e8f0!important}`}</style>
 
       {/* HEADER */}
       <div style={{marginBottom:18}}>
@@ -1048,7 +1050,7 @@ export default function PharmaDART() {
             <button key={m.v} onClick={()=>setPeriodMode(m.v)}
               disabled={phase==="resolving"||phase==="collecting"}
               style={{padding:"5px 14px",fontSize:11,fontWeight:600,borderRadius:6,cursor:"pointer",
-                background:periodMode===m.v?"#1e3a5f":"#f9fafb",
+                background:periodMode===m.v?"#1e3a5f":"#f1f5f9",
                 color:periodMode===m.v?"#38bdf8":"#475569",
                 border:`1px solid ${periodMode===m.v?"#1d4ed8":"#1e293b"}`,transition:"all 0.15s"}}>
               {m.l}
@@ -1059,7 +1061,7 @@ export default function PharmaDART() {
             <button key={r.code} onClick={()=>setReprtCode(r.code)}
               disabled={phase==="resolving"||phase==="collecting"}
               style={{padding:"5px 12px",fontSize:10,fontWeight:600,borderRadius:6,cursor:"pointer",
-                background:reprtCode===r.code?"#0c2340":"#f9fafb",
+                background:reprtCode===r.code?"#0c2340":"#f1f5f9",
                 color:reprtCode===r.code?"#7dd3fc":"#334155",
                 border:`1px solid ${reprtCode===r.code?"#0369a1":"#1e293b"}`,transition:"all 0.15s"}}>
               {r.short}
@@ -1077,7 +1079,7 @@ export default function PharmaDART() {
             )}
               disabled={phase==="resolving"||phase==="collecting"}
               style={{padding:"5px 12px",fontSize:10,fontWeight:600,borderRadius:6,cursor:"pointer",
-                background:quarters.includes(q)?"#1a2e1a":"#f9fafb",
+                background:quarters.includes(q)?"#1a2e1a":"#f1f5f9",
                 color:quarters.includes(q)?"#4ade80":"#334155",
                 border:`1px solid ${quarters.includes(q)?"#166534":"#1e293b"}`,transition:"all 0.15s"}}>
               {label}
