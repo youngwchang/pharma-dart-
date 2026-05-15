@@ -212,17 +212,6 @@ router.get('/employees', async (req, res) => {
 });
 
 /* ──────────────────────────────────────────────────────────
-   GET /dart/batch?corp_code=XXXXXX
-   financial + employees 한 번에 (아티팩트 호출 최소화)
-────────────────────────────────────────────────────────── */
-/* ──────────────────────────────────────────────────────────
-   GET /dart/batch
-   financial + employees 한 번에
-   
-   연간 모드:   ?corp_code=X&years=2016,2017,...&reprt_code=11011
-   분기별 모드: ?corp_code=X&mode=quarterly&year_from=2024&year_to=2026&quarters=Q1,Q2,Q3,Q4
-────────────────────────────────────────────────────────── */
-/* ──────────────────────────────────────────────────────────
    GET /dart/batch
    financial + employees 한 번에
 
