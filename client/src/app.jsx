@@ -353,8 +353,9 @@ function exportHTML(metrics, rawData, filtered, filterInfo, trend) {
   /* MAIN TABLE */
   .tbl-wrap{background:#0f172a;border-radius:10px;border:1px solid #1e293b;overflow-x:auto}
   table{width:100%;border-collapse:collapse;font-size:10px}
-  thead tr{border-bottom:2px solid #d1d5db}
-  th{padding:8px 9px;text-align:right;color:#334155;font-weight:600;white-space:nowrap;font-size:9px;font-family:monospace;letter-spacing:.05em;cursor:pointer;user-select:none}
+  thead tr{border-bottom:2px solid #e5e7eb}
+  th{padding:8px 10px;text-align:right;color:#111827;font-weight:600;white-space:nowrap;font-size:11px;font-family:inherit;cursor:pointer;user-select:none;background:#f9fafb}
+  th.left{text-align:left}
   th.left{text-align:left}
   th:hover{color:#e2e8f0}
   td{padding:5px 9px;text-align:right;font-family:monospace;border-bottom:1px solid #f8fafc}
@@ -699,21 +700,20 @@ function CompanyDetail({name, d, metrics}) {
           </thead>
           <tbody>
             {m.rows.map((r,i)=>(
-              <tr key={r.year} style={{background:i%2?"#f8fafc":"#ffffff",borderBottom:"1px solid #e5e7eb"}}>
-                <td style={{padding:"6px 10px",fontWeight:700,color:"#2563eb",fontFamily:"monospace",textAlign:"right"}}>{r.year}</td>
+              <tr key={r.year} style={{background:i%2?"#f9fafb":"#ffffff", borderBottom:"1px solid #e5e7eb"}}>
+                <td style={{padding:"7px 10px", fontWeight:700, color:"#2563eb", fontFamily:"monospace", textAlign:"right"}}>{r.year}</td>
                 {[r.revenue,r.op_profit,r.net_income,r.assets,r.liabilities].map((v,j)=>(
-                  <td key={j} style={{padding:"6px 10px",fontFamily:"monospace",textAlign:"right",color:"#0f172a"}}>
+                  <td key={j} style={{padding:"7px 10px", fontFamily:"monospace", textAlign:"right", color:"#111827"}}>
                     {v!=null?Math.round(v/1e8).toLocaleString():"—"}
                   </td>
                 ))}
-                <td style={{padding:"6px 10px",fontFamily:"monospace",textAlign:"right",
-                  color:r.op_profit/r.revenue>0.15?"#16a34a":r.op_profit/r.revenue<0?"#dc2626":"#0f172a"}}>
+                <td style={{padding:"7px 10px", fontFamily:"monospace", textAlign:"right", color:"#111827"}}>
                   {r.op_profit!=null&&r.revenue>0?`${(r.op_profit/r.revenue*100).toFixed(1)}%`:"—"}
                 </td>
-                <td style={{padding:"6px 10px",fontFamily:"monospace",textAlign:"right",color:"#7c3aed"}}>
+                <td style={{padding:"7px 10px", fontFamily:"monospace", textAlign:"right", color:"#111827"}}>
                   {r.net_income!=null&&r.revenue>0?`${(r.net_income/r.revenue*100).toFixed(1)}%`:"—"}
                 </td>
-                <td style={{padding:"6px 10px",fontFamily:"monospace",textAlign:"right",color:"#ea580c"}}>
+                <td style={{padding:"7px 10px", fontFamily:"monospace", textAlign:"right", color:"#111827"}}>
                   {r.assets>0&&r.liabilities>0?`${(r.liabilities/r.assets*100).toFixed(1)}%`:"—"}
                 </td>
               </tr>
@@ -1183,7 +1183,7 @@ export default function PharmaDART() {
                 <tr style={{borderBottom:"2px solid #e2e8f0"}}>
                   {COLS.map(c=>(
                     <th key={c.key} className="th" onClick={()=>handleSort(c.key)}
-                      style={{padding:"8px 9px",textAlign:c.align||"right",color:sortKey===c.key?"#2563eb":"#374151",fontWeight:600,
+                      style={{padding:"8px 10px",textAlign:c.align||"right",color:sortKey===c.key?"#2563eb":"#111827",fontWeight:700,
                         whiteSpace:"nowrap",fontSize:9,letterSpacing:"0.05em",fontFamily:"monospace",minWidth:c.w}}>
                       {c.label}{" "}{sortKey===c.key?sortDir==="asc"?"▲":"▼":"⇅"}
                     </th>
@@ -1193,25 +1193,25 @@ export default function PharmaDART() {
               </thead>
               <tbody>
                 {filtered.map((m,i)=>(
-                  <tr key={m.name} style={{borderBottom:"1px solid #e5e7eb", background:i%2?"#f8fafc":"#ffffff", transition:"background 0.1s"}}
-                    onMouseEnter={e=>e.currentTarget.style.background="#eff6ff"}
-                    onMouseLeave={e=>e.currentTarget.style.background=i%2?"#f8fafc":"#ffffff"}>
+                  <tr key={m.name}
+                    style={{borderBottom:"1px solid #e5e7eb", background:i%2?"#f9fafb":"#ffffff", transition:"background 0.1s", cursor:"pointer"}}
+                    onMouseEnter={e=>e.currentTarget.style.background="#f0f4ff"}
+                    onMouseLeave={e=>e.currentTarget.style.background=i%2?"#f9fafb":"#ffffff"}>
                     {COLS.map(c=>{
                       const v=m[c.key];
-                      const col=c.color?c.color(v):null;
                       return (
-                        <td key={c.key} style={{padding:"7px 10px",textAlign:c.align||"right",
+                        <td key={c.key} style={{padding:"8px 10px", textAlign:c.align||"right",
                           fontFamily:c.align==="left"?"inherit":"'IBM Plex Mono',monospace",
-                          color:col||"#0f172a",fontWeight:c.key==="name"?700:400}}>
+                          color:"#111827", fontWeight:c.key==="name"?700:400, fontSize:12}}>
                           {c.key==="type"
-                            ?<span style={{background:(TYPE_COLORS[v]||"#64748b")+"18",color:TYPE_COLORS[v]||"#64748b",borderRadius:4,padding:"2px 7px",fontSize:9,fontWeight:700}}>{v}</span>
+                            ?<span style={{background:(TYPE_COLORS[v]||"#64748b")+"18", color:TYPE_COLORS[v]||"#64748b", borderRadius:4, padding:"2px 8px", fontSize:10, fontWeight:700}}>{v}</span>
                             :c.fmt(v)}
                         </td>
                       );
                     })}
-                    <td style={{padding:"7px 10px",textAlign:"center"}}>
+                    <td style={{padding:"8px 10px", textAlign:"center"}}>
                       <button onClick={()=>{setSelCo(m.name);setTab("detail");}}
-                        style={{background:"#e0e7ff",border:"none",borderRadius:4,color:"#2563eb",fontSize:10,cursor:"pointer",padding:"3px 9px",fontWeight:600}}>→</button>
+                        style={{background:"#e0e7ff", border:"none", borderRadius:4, color:"#2563eb", fontSize:11, cursor:"pointer", padding:"3px 10px", fontWeight:600}}>→</button>
                     </td>
                   </tr>
                 ))}
