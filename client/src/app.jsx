@@ -209,6 +209,7 @@ function exportExcel(metrics, rawData, filtered, filterInfo, YEARS) {
   ]);
   ws0["!cols"] = [16,12,8,8,12,12,10,10,8].map(w=>({wch:w}));
   ws0["!merges"] = [{s:{r:0,c:0},e:{r:0,c:8}}];
+  ws0["!freeze"] = {xSplit:2, ySplit:3, topLeftCell:"C4", activePane:"bottomRight", state:"frozen"};
   XLSX.utils.book_append_sheet(wb, ws0, "📌현재뷰");
 
   // Sheet 1: 전체 기업 요약
@@ -223,6 +224,7 @@ function exportExcel(metrics, rawData, filtered, filterInfo, YEARS) {
     m.dataYears,
   ])]);
   ws1["!cols"] = [16,12,8,8,12,12,10,10,8].map(w=>({wch:w}));
+  ws1["!freeze"] = {xSplit:2, ySplit:1, topLeftCell:"C2", activePane:"bottomRight", state:"frozen"};
   XLSX.utils.book_append_sheet(wb, ws1, "전체기업요약");
 
   // 연도별 시트
@@ -237,7 +239,9 @@ function exportExcel(metrics, rawData, filtered, filterInfo, YEARS) {
       })
     ]);
     const ws = XLSX.utils.aoa_to_sheet([header,...rows]);
-    ws["!cols"] = [16,12,...YEARS.map(()=>({wch:10}))];
+    ws["!cols"] = [{wch:20},{wch:12},...YEARS.map(()=>({wch:12}))];
+    // 헤더 1행 + 기업명·업종 2열 고정
+    ws["!freeze"] = {xSplit:2, ySplit:1, topLeftCell:"C2", activePane:"bottomRight", state:"frozen"};
     XLSX.utils.book_append_sheet(wb, ws, label);
   };
   const makeRatioSheet = (num, den, label) => {
@@ -251,7 +255,8 @@ function exportExcel(metrics, rawData, filtered, filterInfo, YEARS) {
       })
     ]);
     const ws = XLSX.utils.aoa_to_sheet([header,...rows]);
-    ws["!cols"] = [16,12,...YEARS.map(()=>({wch:8}))];
+    ws["!cols"] = [{wch:20},{wch:12},...YEARS.map(()=>({wch:10}))];
+    ws["!freeze"] = {xSplit:2, ySplit:1, topLeftCell:"C2", activePane:"bottomRight", state:"frozen"};
     XLSX.utils.book_append_sheet(wb, ws, label);
   };
 
@@ -300,10 +305,9 @@ function exportHTML(metrics, rawData, filtered, filterInfo, trend) {
     const avg = arr => arr.length?arr.reduce((s,v)=>s+v,0)/arr.length:null;
     return {
       type:t, count:ms.length,
-      cagr:    avg(ms.map(m=>m.cagr).filter(v=>v!=null)),
-      opM:     avg(ms.filter(m=>m.opMargin!=null).map(m=>m.opMargin)),
-      sgaR:    avg(ms.filter(m=>m.sgaRatio!=null).map(m=>m.sgaRatio)),
-      cogsR:   avg(ms.filter(m=>m.cogsRatio!=null).map(m=>m.cogsRatio)),
+      cagr:  avg(ms.map(m=>m.cagr).filter(v=>v!=null)),
+      opM:   avg(ms.filter(m=>m.opMargin!=null).map(m=>m.opMargin)),
+      netM:  avg(ms.filter(m=>m.netMargin!=null).map(m=>m.netMargin)),
     };
   }).filter(Boolean);
 
