@@ -1067,9 +1067,6 @@ export default function PharmaDART() {
 
       {/* HEADER */}
       <div style={{marginBottom:18}}>
-        <div style={{fontSize:10,color:"#38bdf8",fontFamily:"monospace",letterSpacing:"0.15em",marginBottom:4,color:"#374151"}}>
-          DART OPENAPI DIRECT · 토큰 0 · 비용 0
-        </div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div>
             <h1 style={{fontSize:17,fontWeight:900,margin:0,letterSpacing:"-0.03em"}}>
