@@ -53,13 +53,11 @@ function parseFinancial(list) {
   const IS     = list.filter(i => i.sj_div==='IS' && i.fs_div===fsDiv);
   const BS     = list.filter(i => i.sj_div==='BS' && i.fs_div===fsDiv);
 
-  // 판관비: 표준 계정 → 없으면 여러 대체 명칭 합산
+  // 판관비: 공백 유무 모두 대응 + 대체 명칭
   const sga = firstMatch(IS,
     ['ifrs-full_SellingGeneralAndAdministrativeExpense','dart_Sga','dart_SellingGeneralAdministrativeExpenses'],
-    ['판매비와관리비','판매비 및 관리비','판관비','판매관리비']
-  ) ?? sumMatch(IS, [
-    ['판매비'],['관리비'],['영업관리비']
-  ]);
+    ['판매비와 관리비','판매비와관리비','판매비 및 관리비','판매비및관리비','판관비','판매관리비','영업비용']
+  ) ?? sumMatch(IS, [['판매비'],['관리비'],['영업관리비']]);
 
   // 매출원가: 제약사는 제품+상품 합산인 경우 있음
   const cogs = firstMatch(IS,
@@ -217,7 +215,7 @@ router.get('/employees', async (req, res) => {
 
    연간 모드:   ?corp_code=X&mode=annual&years=2016,...&reprt_code=11011
    분기별 모드: ?corp_code=X&mode=quarterly&year_from=2024&year_to=2026&quarters=Q1,Q2,Q3,Q4
-               → 독립 분기값 (누적 차분) 반환
+               → DART 원본 누적값 그대로 반환 (가공 없음)
 ────────────────────────────────────────────────────────── */
 router.get('/batch', async (req, res) => {
   const { corp_code, mode='annual' } = req.query;
@@ -242,7 +240,6 @@ router.get('/batch', async (req, res) => {
           ? parseFinancial(r.data.list) : null;
       } catch { result[year] = null; }
 
-      // 직원수
       await wait(DELAY);
       try {
         const r = await axios.get(`${BASE}/empSttus.json`, {
@@ -259,70 +256,28 @@ router.get('/batch', async (req, res) => {
     return res.json({ corp_code, mode, years: result });
   }
 
-  /* ── 분기별 모드: 독립 분기값 = 누적 차분 ── */
+  /* ── 분기별 모드: DART 원본 누적값 그대로 ── */
   const year_from = parseInt(req.query.year_from || new Date().getFullYear());
   const year_to   = parseInt(req.query.year_to   || new Date().getFullYear());
   const wantQ     = new Set((req.query.quarters||'Q1,Q2,Q3,Q4').split(',').map(s=>s.trim().toUpperCase()));
-
-  // P&L 항목 (누적→독립 차분 대상)
-  const PL_FIELDS = ['revenue','op_profit','net_income','sga','cogs'];
-  // B/S 항목 (기말 시점값, 차분 불필요)
-  const BS_FIELDS = ['assets','liabilities'];
-
-  const sub = (a, b) => {
-    // a - b, null 안전 처리
-    if (a == null) return null;
-    if (b == null) return a;
-    return a - b;
-  };
+  const qMap      = { Q1:REPRT.q1, Q2:REPRT.q2, Q3:REPRT.q3, Q4:REPRT.annual };
 
   for (let y = year_from; y <= year_to; y++) {
-    const yr = String(y);
-
-    // 4개 보고서 순서대로 fetch
-    const fetched = {};
-    for (const [qKey, reprt_code] of [['Q1',REPRT.q1],['Q2',REPRT.q2],['Q3',REPRT.q3],['Q4',REPRT.annual]]) {
+    for (const q of ['Q1','Q2','Q3','Q4']) {
+      if (!wantQ.has(q)) continue;
       await wait(DELAY);
       try {
         const r = await axios.get(`${BASE}/fnlttSinglAcnt.json`, {
-          params: { crtfc_key:KEY(), corp_code, bsns_year:yr, reprt_code },
+          params: { crtfc_key:KEY(), corp_code, bsns_year:String(y), reprt_code:qMap[q] },
           timeout: 12000,
         });
-        fetched[qKey] = (r.data.status==='000' && r.data.list?.length)
+        result[`${y}_${q}`] = (r.data.status==='000' && r.data.list?.length)
           ? parseFinancial(r.data.list) : null;
-      } catch { fetched[qKey] = null; }
-    }
-
-    // 독립 분기값 계산
-    const standalone = {
-      Q1: fetched.Q1,                                      // Q1 단독 = Q1 누적
-      Q2: (() => {                                          // Q2 단독 = 반기 - Q1
-        if (!fetched.Q2) return null;
-        const out = { ...fetched.Q2 };
-        PL_FIELDS.forEach(f => { out[f] = sub(fetched.Q2?.[f], fetched.Q1?.[f]); });
-        return out;
-      })(),
-      Q3: (() => {                                          // Q3 단독 = 3Q누적 - 반기
-        if (!fetched.Q3) return null;
-        const out = { ...fetched.Q3 };
-        PL_FIELDS.forEach(f => { out[f] = sub(fetched.Q3?.[f], fetched.Q2?.[f]); });
-        return out;
-      })(),
-      Q4: (() => {                                          // Q4 단독 = 연간 - 3Q누적
-        if (!fetched.Q4) return null;
-        const out = { ...fetched.Q4 };
-        PL_FIELDS.forEach(f => { out[f] = sub(fetched.Q4?.[f], fetched.Q3?.[f]); });
-        return out;
-      })(),
-    };
-
-    // 원하는 분기만 결과에 포함
-    for (const q of ['Q1','Q2','Q3','Q4']) {
-      if (wantQ.has(q)) result[`${yr}_${q}`] = standalone[q];
+      } catch { result[`${y}_${q}`] = null; }
     }
   }
 
-  res.json({ corp_code, mode, years: result });
+  return res.json({ corp_code, mode, years: result });
 });
 
 /* health */
