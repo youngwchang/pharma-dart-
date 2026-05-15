@@ -130,8 +130,8 @@ const START_YEAR = 2010; // 선택 가능한 최초 연도
 const REPORT_TYPES = [
   { code:"11011", label:"연간 (사업보고서)",        short:"연간" },
   { code:"11013", label:"1분기 (1~3월)",            short:"1Q"  },
-  { code:"11012", label:"반기 (1~6월 누적)",         short:"2Q"  },
-  { code:"11014", label:"3분기 (1~9월 누적)",        short:"3Q"  },
+  { code:"11012", label:"반기 (4~6월)",         short:"2Q"  },
+  { code:"11014", label:"3분기 (7~9월)",        short:"3Q"  },
 ];
 
 const makeYears = (from, to) =>
@@ -609,11 +609,11 @@ function sortTable(col) {
 const Tip = ({ active, payload, label }) => {
   if (!active||!payload?.length) return null;
   return (
-    <div style={{background:"#0f172a",border:"1px solid #1e293b",borderRadius:6,padding:"8px 12px",fontSize:11}}>
-      <div style={{color:"#64748b",marginBottom:4}}>{label}</div>
+    <div style={{background:"#f1f5f9",border:"1px solid #d1d5db",borderRadius:6,padding:"8px 12px",fontSize:11}}>
+      <div style={{color:"#6b7280",marginBottom:4}}>{label}</div>
       {payload.map((p,i)=>(
         <div key={i} style={{display:"flex",justifyContent:"space-between",gap:10,color:p.color||"#e2e8f0"}}>
-          <span style={{color:"#64748b"}}>{p.name}</span>
+          <span style={{color:"#6b7280"}}>{p.name}</span>
           <b>{typeof p.value==="number"?p.value.toFixed(1):p.value}</b>
         </div>
       ))}
@@ -622,10 +622,10 @@ const Tip = ({ active, payload, label }) => {
 };
 
 const Kpi = ({label,value,color="#38bdf8",sub}) => (
-  <div style={{background:"#0f172a",borderRadius:8,padding:"12px 14px",borderTop:`2px solid ${color}`,flex:1,minWidth:100}}>
-    <div style={{fontSize:9,color:"#334155",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:5}}>{label}</div>
-    <div style={{fontSize:18,fontWeight:800,color:"#f1f5f9",fontFamily:"'IBM Plex Mono',monospace",lineHeight:1}}>{value}</div>
-    {sub&&<div style={{fontSize:9,color:"#334155",marginTop:3}}>{sub}</div>}
+  <div style={{background:"#f1f5f9",borderRadius:8,padding:"12px 14px",borderTop:`2px solid ${color}`,flex:1,minWidth:100}}>
+    <div style={{fontSize:9,color:"#9ca3af",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:5}}>{label}</div>
+    <div style={{fontSize:18,fontWeight:800,color:"#0f172a",fontFamily:"'IBM Plex Mono',monospace",lineHeight:1}}>{value}</div>
+    {sub&&<div style={{fontSize:9,color:"#9ca3af",marginTop:3}}>{sub}</div>}
   </div>
 );
 
@@ -634,7 +634,7 @@ const Kpi = ({label,value,color="#38bdf8",sub}) => (
 ───────────────────────────────────────── */
 function CompanyDetail({name, d, metrics}) {
   const m = metrics.find(x=>x.name===name);
-  if (!m) return <div style={{color:"#475569",padding:20}}>데이터 없음</div>;
+  if (!m) return <div style={{color:"#374151",padding:20}}>데이터 없음</div>;
   const tc = TYPE_COLORS[m.type]||"#94a3b8";
   const revData  = m.rows.map(r=>({year:r.year,"매출(억)":+(r.revenue/1e8).toFixed(0)}));
   const margData = m.rows.map(r=>({year:r.year,
@@ -651,10 +651,10 @@ function CompanyDetail({name, d, metrics}) {
     <div>
       <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
         <div>
-          <div style={{fontSize:18,fontWeight:900,color:"#f1f5f9"}}>{name}</div>
+          <div style={{fontSize:18,fontWeight:900,color:"#0f172a"}}>{name}</div>
           <div style={{display:"flex",gap:6,marginTop:4}}>
             {[m.type,m.market,`데이터 ${m.dataYears}년`].map(t=>(
-              <span key={t} style={{background:"#1e293b",color:t===m.type?tc:"#64748b",borderRadius:4,padding:"2px 7px",fontSize:9,fontWeight:700}}>{t}</span>
+              <span key={t} style={{background:"#e5e7eb",color:t===m.type?tc:"#64748b",borderRadius:4,padding:"2px 7px",fontSize:9,fontWeight:700}}>{t}</span>
             ))}
           </div>
         </div>
@@ -674,13 +674,13 @@ function CompanyDetail({name, d, metrics}) {
           {data:costData, lines:[{k:"판관비율",  c:"#fbbf24"},{k:"원가율",  c:"#f87171"}], title:"비용구조 (%)",u:"%"},
           {data:empData,  lines:[{k:"직원수",    c:"#94a3b8"}], title:"직원수",       u:"명"},
         ].map(({data,lines,title,u})=>(
-          <div key={title} style={{background:"#0f172a",borderRadius:8,padding:"10px 12px",border:"1px solid #1e293b"}}>
-            <div style={{fontSize:10,fontWeight:700,color:"#64748b",marginBottom:8}}>{title}</div>
+          <div key={title} style={{background:"#f1f5f9",borderRadius:8,padding:"10px 12px",border:"1px solid #d1d5db"}}>
+            <div style={{fontSize:10,fontWeight:700,color:"#6b7280",marginBottom:8}}>{title}</div>
             <ResponsiveContainer width="100%" height={140}>
               <LineChart data={data}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b"/>
-                <XAxis dataKey="year" stroke="#1e293b" tick={{fontSize:9,fill:"#475569"}}/>
-                <YAxis stroke="#1e293b" tick={{fontSize:9,fill:"#475569"}} unit={u} width={40}/>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb"/>
+                <XAxis dataKey="year" stroke="#e5e7eb" tick={{fontSize:9,fill:"#374151"}}/>
+                <YAxis stroke="#e5e7eb" tick={{fontSize:9,fill:"#374151"}} unit={u} width={40}/>
                 <Tooltip content={<Tip/>}/>
                 {lines.map(l=><Line key={l.k} type="monotone" dataKey={l.k} stroke={l.c} strokeWidth={2} dot={{r:2,fill:l.c}} connectNulls/>)}
               </LineChart>
@@ -689,24 +689,24 @@ function CompanyDetail({name, d, metrics}) {
         ))}
       </div>
       {/* raw table */}
-      <div style={{background:"#0f172a",borderRadius:8,border:"1px solid #1e293b",overflowX:"auto"}}>
-        <div style={{fontSize:10,fontWeight:700,color:"#475569",padding:"8px 12px",borderBottom:"1px solid #1e293b"}}>연도별 원시 데이터</div>
+      <div style={{background:"#f1f5f9",borderRadius:8,border:"1px solid #d1d5db",overflowX:"auto"}}>
+        <div style={{fontSize:10,fontWeight:700,color:"#374151",padding:"8px 12px",borderBottom:"1px solid #d1d5db"}}>연도별 원시 데이터</div>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:10}}>
           <thead>
             <tr>{["연도","매출(억)","영업이익","순이익","자산","부채","판관비","원가","직원","영업익률","판관비율","원가율"].map(h=>(
-              <th key={h} style={{padding:"6px 9px",textAlign:"right",color:"#334155",fontWeight:600,borderBottom:"1px solid #1e293b",fontSize:9,whiteSpace:"nowrap"}}>{h}</th>
+              <th key={h} style={{padding:"6px 9px",textAlign:"right",color:"#9ca3af",fontWeight:600,borderBottom:"1px solid #d1d5db",fontSize:9,whiteSpace:"nowrap"}}>{h}</th>
             ))}</tr>
           </thead>
           <tbody>
             {m.rows.map((r,i)=>(
-              <tr key={r.year} style={{background:i%2?"#070d18":"transparent",borderBottom:"1px solid #0a1020"}}>
+              <tr key={r.year} style={{background:i%2?"#070d18":"transparent",borderBottom:"1px solid #e5e7eb"}}>
                 <td style={{padding:"5px 9px",fontWeight:700,color:"#38bdf8",fontFamily:"monospace",textAlign:"right"}}>{r.year}</td>
                 {[r.revenue,r.op_profit,r.net_income,r.assets,r.liabilities,r.sga,r.cogs].map((v,j)=>(
-                  <td key={j} style={{padding:"5px 9px",fontFamily:"monospace",textAlign:"right",color:"#e2e8f0"}}>
+                  <td key={j} style={{padding:"5px 9px",fontFamily:"monospace",textAlign:"right",color:"#0f172a"}}>
                     {v!=null?Math.round(v/1e8).toLocaleString():"—"}
                   </td>
                 ))}
-                <td style={{padding:"5px 9px",fontFamily:"monospace",textAlign:"right",color:"#94a3b8"}}>{r.employees?.toLocaleString()||"—"}</td>
+                <td style={{padding:"5px 9px",fontFamily:"monospace",textAlign:"right",color:"#6b7280"}}>{r.employees?.toLocaleString()||"—"}</td>
                 <td style={{padding:"5px 9px",fontFamily:"monospace",textAlign:"right",color:r.op_profit/r.revenue>0.15?"#4ade80":r.op_profit/r.revenue<0?"#f87171":"#e2e8f0"}}>
                   {r.op_profit!=null&&r.revenue>0?`${(r.op_profit/r.revenue*100).toFixed(1)}%`:"—"}
                 </td>
@@ -749,18 +749,18 @@ function DetailLayout({metrics, rawData, selCompany, setSelCo}) {
   return (
     <div style={{display:"grid",gridTemplateColumns:"200px 1fr",gap:10,alignItems:"start"}}>
       {/* sidebar */}
-      <div style={{background:"#0f172a",borderRadius:10,border:"1px solid #1e293b",overflow:"hidden",position:"sticky",top:8}}>
+      <div style={{background:"#f1f5f9",borderRadius:10,border:"1px solid #d1d5db",overflow:"hidden",position:"sticky",top:8}}>
         {/* search */}
-        <div style={{padding:"8px 8px 6px",borderBottom:"1px solid #1e293b"}}>
+        <div style={{padding:"8px 8px 6px",borderBottom:"1px solid #d1d5db"}}>
           <div style={{position:"relative"}}>
-            <span style={{position:"absolute",left:7,top:"50%",transform:"translateY(-50%)",fontSize:10,color:"#334155"}}>🔍</span>
+            <span style={{position:"absolute",left:7,top:"50%",transform:"translateY(-50%)",fontSize:10,color:"#9ca3af"}}>🔍</span>
             <input value={q} onChange={e=>setQ(e.target.value)} placeholder="기업명..."
-              style={{width:"100%",padding:"5px 22px",background:"#020617",border:"1px solid #1e293b",borderRadius:5,color:"#e2e8f0",fontSize:11,outline:"none",boxSizing:"border-box"}}/>
-            {q&&<button onClick={()=>setQ("")} style={{position:"absolute",right:5,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#475569",cursor:"pointer",fontSize:11,padding:0}}>✕</button>}
+              style={{width:"100%",padding:"5px 22px",background:"#ffffff",border:"1px solid #d1d5db",borderRadius:5,color:"#0f172a",fontSize:11,outline:"none",boxSizing:"border-box"}}/>
+            {q&&<button onClick={()=>setQ("")} style={{position:"absolute",right:5,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#374151",cursor:"pointer",fontSize:11,padding:0}}>✕</button>}
           </div>
         </div>
         {/* filters */}
-        <div style={{padding:"6px 8px",borderBottom:"1px solid #1e293b",display:"flex",flexDirection:"column",gap:5}}>
+        <div style={{padding:"6px 8px",borderBottom:"1px solid #d1d5db",display:"flex",flexDirection:"column",gap:5}}>
           <div style={{display:"flex",gap:3,flexWrap:"wrap"}}>
             {["전체",...Object.keys(TYPE_COLORS)].map(t=>(
               <button key={t} onClick={()=>setFType(t)} style={{
@@ -772,7 +772,7 @@ function DetailLayout({metrics, rawData, selCompany, setSelCo}) {
             ))}
           </div>
           <select value={sortBy} onChange={e=>setSortBy(e.target.value)} style={{
-            background:"#020617",border:"1px solid #1e293b",borderRadius:4,color:"#475569",
+            background:"#ffffff",border:"1px solid #d1d5db",borderRadius:4,color:"#374151",
             fontSize:9,padding:"2px 4px",outline:"none",cursor:"pointer",width:"100%"
           }}>
             <option value="cagr">CAGR 높은순</option>
@@ -781,12 +781,12 @@ function DetailLayout({metrics, rawData, selCompany, setSelCo}) {
           </select>
         </div>
         {/* count */}
-        <div style={{padding:"4px 10px",borderBottom:"1px solid #1e293b",fontSize:9,color:"#334155",fontFamily:"monospace"}}>
+        <div style={{padding:"4px 10px",borderBottom:"1px solid #d1d5db",fontSize:9,color:"#9ca3af",fontFamily:"monospace"}}>
           {visible.length}개 / 전체 {metrics.length}개
         </div>
         {/* list */}
         <div style={{height:500,overflowY:"auto"}}>
-          {visible.length===0&&<div style={{padding:16,textAlign:"center",color:"#334155",fontSize:11}}>검색 결과 없음</div>}
+          {visible.length===0&&<div style={{padding:16,textAlign:"center",color:"#9ca3af",fontSize:11}}>검색 결과 없음</div>}
           {visible.map((m,i)=>{
             const isActive = m.name===selected;
             const tc = TYPE_COLORS[m.type]||"#94a3b8";
@@ -815,7 +815,7 @@ function DetailLayout({metrics, rawData, selCompany, setSelCo}) {
       <div>
         {selected
           ? <CompanyDetail name={selected} d={rawData[selected]} metrics={metrics}/>
-          : <div style={{padding:40,textAlign:"center",color:"#334155",fontSize:12}}>← 기업을 선택하세요</div>
+          : <div style={{padding:40,textAlign:"center",color:"#9ca3af",fontSize:12}}>← 기업을 선택하세요</div>
         }
       </div>
     </div>
@@ -993,10 +993,10 @@ export default function PharmaDART() {
   const TABS_DEF = [{id:"table",label:"📋 비교표"},{id:"detail",label:"🏢 기업 상세"},{id:"trend",label:"📈 산업 트렌드"}];
 
   return (
-    <div style={{background:"#020617",minHeight:"100vh",color:"#e2e8f0",
+    <div style={{background:"#ffffff",minHeight:"100vh",color:"#0f172a",
       fontFamily:"'Pretendard','Apple SD Gothic Neo',sans-serif",padding:"20px 18px",maxWidth:1140,margin:"0 auto"}}>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&display=swap"/>
-      <style>{`*::-webkit-scrollbar{width:5px;height:5px}*::-webkit-scrollbar-track{background:#0f172a}*::-webkit-scrollbar-thumb{background:#1e293b;border-radius:3px}.th{cursor:pointer;user-select:none}.th:hover{color:#e2e8f0!important}`}</style>
+      <style>{`*::-webkit-scrollbar{width:5px;height:5px}*::-webkit-scrollbar-track{background:#f1f5f9}*::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:3px}.th{cursor:pointer;user-select:none}.th:hover{color:#e2e8f0!important}`}</style>
 
       {/* HEADER */}
       <div style={{marginBottom:18}}>
@@ -1008,7 +1008,7 @@ export default function PharmaDART() {
             <h1 style={{fontSize:17,fontWeight:900,margin:0,letterSpacing:"-0.03em"}}>
               한국 제약/바이오 상장사 재무 분석
             </h1>
-            <p style={{color:"#334155",margin:"4px 0 0",fontSize:11}}>
+            <p style={{color:"#9ca3af",margin:"4px 0 0",fontSize:11}}>
               DART API 직접 호출 · {PHARMA_LIST.length}개사 대상
               {collectedPeriod && ` · ${collectedPeriod.yearFrom}~${collectedPeriod.yearTo} ${
                 collectedPeriod.mode==="quarterly"
@@ -1039,16 +1039,16 @@ export default function PharmaDART() {
       </div>
 
       {/* COLLECTION PANEL */}
-      <div style={{background:"#0f172a",borderRadius:10,padding:16,marginBottom:16,border:"1px solid #1e293b"}}>
+      <div style={{background:"#f1f5f9",borderRadius:10,padding:16,marginBottom:16,border:"1px solid #d1d5db"}}>
 
         {/* 1행: 데이터 단위 */}
         <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:12}}>
-          <div style={{fontSize:9,color:"#475569",letterSpacing:"0.1em",whiteSpace:"nowrap"}}>데이터 단위</div>
+          <div style={{fontSize:9,color:"#374151",letterSpacing:"0.1em",whiteSpace:"nowrap"}}>데이터 단위</div>
           {[{v:"annual",l:"연간"},{v:"quarterly",l:"분기별"}].map(m=>(
             <button key={m.v} onClick={()=>setPeriodMode(m.v)}
               disabled={phase==="resolving"||phase==="collecting"}
               style={{padding:"5px 14px",fontSize:11,fontWeight:600,borderRadius:6,cursor:"pointer",
-                background:periodMode===m.v?"#1e3a5f":"#020617",
+                background:periodMode===m.v?"#1e3a5f":"#f9fafb",
                 color:periodMode===m.v?"#38bdf8":"#475569",
                 border:`1px solid ${periodMode===m.v?"#1d4ed8":"#1e293b"}`,transition:"all 0.15s"}}>
               {m.l}
@@ -1059,7 +1059,7 @@ export default function PharmaDART() {
             <button key={r.code} onClick={()=>setReprtCode(r.code)}
               disabled={phase==="resolving"||phase==="collecting"}
               style={{padding:"5px 12px",fontSize:10,fontWeight:600,borderRadius:6,cursor:"pointer",
-                background:reprtCode===r.code?"#0c2340":"#020617",
+                background:reprtCode===r.code?"#0c2340":"#f9fafb",
                 color:reprtCode===r.code?"#7dd3fc":"#334155",
                 border:`1px solid ${reprtCode===r.code?"#0369a1":"#1e293b"}`,transition:"all 0.15s"}}>
               {r.short}
@@ -1077,7 +1077,7 @@ export default function PharmaDART() {
             )}
               disabled={phase==="resolving"||phase==="collecting"}
               style={{padding:"5px 12px",fontSize:10,fontWeight:600,borderRadius:6,cursor:"pointer",
-                background:quarters.includes(q)?"#1a2e1a":"#020617",
+                background:quarters.includes(q)?"#1a2e1a":"#f9fafb",
                 color:quarters.includes(q)?"#4ade80":"#334155",
                 border:`1px solid ${quarters.includes(q)?"#166534":"#1e293b"}`,transition:"all 0.15s"}}>
               {label}
@@ -1088,22 +1088,22 @@ export default function PharmaDART() {
         {/* 2행: 연도 범위 + 수집 버튼 */}
         <div style={{display:"flex",gap:10,alignItems:"flex-end",flexWrap:"wrap"}}>
           <div>
-            <div style={{fontSize:9,color:"#475569",marginBottom:5,letterSpacing:"0.1em"}}>시작 연도</div>
+            <div style={{fontSize:9,color:"#374151",marginBottom:5,letterSpacing:"0.1em"}}>시작 연도</div>
             <select value={yearFrom} onChange={e=>setYearFrom(+e.target.value)}
               disabled={phase==="resolving"||phase==="collecting"}
-              style={{background:"#020617",border:"1px solid #1e293b",borderRadius:6,color:"#e2e8f0",
+              style={{background:"#ffffff",border:"1px solid #d1d5db",borderRadius:6,color:"#0f172a",
                 fontSize:12,padding:"7px 10px",outline:"none",cursor:"pointer"}}>
               {Array.from({length: THIS_YEAR - START_YEAR + 1}, (_,i)=>START_YEAR+i).map(y=>(
                 <option key={y} value={y}>{y}년</option>
               ))}
             </select>
           </div>
-          <div style={{fontSize:14,color:"#334155",paddingBottom:8}}>~</div>
+          <div style={{fontSize:14,color:"#9ca3af",paddingBottom:8}}>~</div>
           <div>
-            <div style={{fontSize:9,color:"#475569",marginBottom:5,letterSpacing:"0.1em"}}>종료 연도</div>
+            <div style={{fontSize:9,color:"#374151",marginBottom:5,letterSpacing:"0.1em"}}>종료 연도</div>
             <select value={yearTo} onChange={e=>setYearTo(+e.target.value)}
               disabled={phase==="resolving"||phase==="collecting"}
-              style={{background:"#020617",border:"1px solid #1e293b",borderRadius:6,color:"#e2e8f0",
+              style={{background:"#ffffff",border:"1px solid #d1d5db",borderRadius:6,color:"#0f172a",
                 fontSize:12,padding:"7px 10px",outline:"none",cursor:"pointer"}}>
               {Array.from({length: THIS_YEAR - START_YEAR + 1}, (_,i)=>START_YEAR+i)
                 .filter(y=>y>=yearFrom).map(y=>(
@@ -1111,7 +1111,7 @@ export default function PharmaDART() {
               ))}
             </select>
           </div>
-          <div style={{fontSize:10,color:"#334155",paddingBottom:8,whiteSpace:"nowrap"}}>
+          <div style={{fontSize:10,color:"#9ca3af",paddingBottom:8,whiteSpace:"nowrap"}}>
             {periodMode==="quarterly"
               ? `${(yearTo-yearFrom+1)*quarters.length}개 기간`
               : `${yearTo-yearFrom+1}개년`}
@@ -1126,7 +1126,7 @@ export default function PharmaDART() {
 
         {phase!=="idle"&&(
           <div style={{marginTop:12}}>
-            <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#475569",marginBottom:4,fontFamily:"monospace"}}>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#374151",marginBottom:4,fontFamily:"monospace"}}>
               <span>
                 {phase==="resolving"&&"corp_code 해석 중..."}
                 {phase==="collecting"&&`[${progress.n}/${progress.total}] ${progress.cur} · 성공 ${progress.ok} / 실패 ${progress.fail}`}
@@ -1134,11 +1134,11 @@ export default function PharmaDART() {
               </span>
               <span style={{color:phase==="done"?"#4ade80":"#64748b"}}>{phase==="collecting"?`${pct}%`:phase==="done"?"✓":""}</span>
             </div>
-            <div style={{background:"#020617",borderRadius:4,height:3,overflow:"hidden",marginBottom:8}}>
+            <div style={{background:"#ffffff",borderRadius:4,height:3,overflow:"hidden",marginBottom:8}}>
               <div style={{width:phase==="resolving"?"20%":phase==="done"?"100%":`${pct}%`,height:"100%",
                 background:phase==="done"?"#16a34a":"#1d4ed8",transition:"width 0.4s ease",borderRadius:4}}/>
             </div>
-            <div style={{height:56,overflowY:"auto",background:"#020617",borderRadius:5,padding:"4px 8px"}}>
+            <div style={{height:56,overflowY:"auto",background:"#ffffff",borderRadius:5,padding:"4px 8px"}}>
               {log.slice(-6).map((l,i)=>(
                 <div key={i} style={{fontSize:9,fontFamily:"monospace",lineHeight:1.8,
                   color:l.includes("✓")||l.includes("🎉")||l.includes("✅")?"#4ade80":l.includes("✗")||l.includes("⚠")?"#f59e0b":"#334155"}}>{l}</div>
@@ -1149,7 +1149,7 @@ export default function PharmaDART() {
       </div>
 
       {/* TABS */}
-      <div style={{display:"flex",gap:2,marginBottom:16,background:"#0f172a",padding:4,borderRadius:8,border:"1px solid #1e293b"}}>
+      <div style={{display:"flex",gap:2,marginBottom:16,background:"#f1f5f9",padding:4,borderRadius:8,border:"1px solid #d1d5db"}}>
         {TABS_DEF.map(t=>(
           <button key={t.id} onClick={()=>setTab(t.id)}
             style={{flex:1,padding:"8px",background:tab===t.id?"#1e293b":"transparent",color:tab===t.id?"#e2e8f0":"#475569",
@@ -1163,7 +1163,7 @@ export default function PharmaDART() {
         <div>
           <div style={{display:"flex",gap:8,marginBottom:12,flexWrap:"wrap",alignItems:"center"}}>
             <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="기업명 검색..."
-              style={{padding:"6px 11px",background:"#0f172a",border:"1px solid #1e293b",borderRadius:6,color:"#e2e8f0",fontSize:11,outline:"none",width:140}}/>
+              style={{padding:"6px 11px",background:"#f1f5f9",border:"1px solid #d1d5db",borderRadius:6,color:"#0f172a",fontSize:11,outline:"none",width:140}}/>
             <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>
               {TYPES.map(t=>(
                 <button key={t} onClick={()=>setFType(t)} style={{
@@ -1174,12 +1174,12 @@ export default function PharmaDART() {
                 }}>{t}</button>
               ))}
             </div>
-            <div style={{marginLeft:"auto",fontSize:10,color:"#334155",fontFamily:"monospace"}}>{filtered.length} / {metrics.length}개사</div>
+            <div style={{marginLeft:"auto",fontSize:10,color:"#9ca3af",fontFamily:"monospace"}}>{filtered.length} / {metrics.length}개사</div>
           </div>
-          <div style={{background:"#0f172a",borderRadius:10,border:"1px solid #1e293b",overflowX:"auto"}}>
+          <div style={{background:"#f1f5f9",borderRadius:10,border:"1px solid #d1d5db",overflowX:"auto"}}>
             <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
               <thead>
-                <tr style={{borderBottom:"2px solid #1e293b"}}>
+                <tr style={{borderBottom:"2px solid #d1d5db"}}>
                   {COLS.map(c=>(
                     <th key={c.key} className="th" onClick={()=>handleSort(c.key)}
                       style={{padding:"8px 9px",textAlign:c.align||"right",color:sortKey===c.key?"#38bdf8":"#334155",fontWeight:600,
@@ -1187,7 +1187,7 @@ export default function PharmaDART() {
                       {c.label}{" "}{sortKey===c.key?sortDir==="asc"?"▲":"▼":"⇅"}
                     </th>
                   ))}
-                  <th style={{padding:"8px 9px",color:"#334155",fontSize:9}}>상세</th>
+                  <th style={{padding:"8px 9px",color:"#9ca3af",fontSize:9}}>상세</th>
                 </tr>
               </thead>
               <tbody>
@@ -1210,12 +1210,12 @@ export default function PharmaDART() {
                     })}
                     <td style={{padding:"5px 9px",textAlign:"center"}}>
                       <button onClick={()=>{setSelCo(m.name);setTab("detail");}}
-                        style={{background:"#1e293b",border:"none",borderRadius:4,color:"#38bdf8",fontSize:10,cursor:"pointer",padding:"2px 7px"}}>→</button>
+                        style={{background:"#e5e7eb",border:"none",borderRadius:4,color:"#38bdf8",fontSize:10,cursor:"pointer",padding:"2px 7px"}}>→</button>
                     </td>
                   </tr>
                 ))}
                 {!filtered.length&&(
-                  <tr><td colSpan={COLS.length+1} style={{padding:30,textAlign:"center",color:"#334155",fontSize:11}}>
+                  <tr><td colSpan={COLS.length+1} style={{padding:30,textAlign:"center",color:"#9ca3af",fontSize:11}}>
                     {metrics.length?"조건에 맞는 기업 없음":"수집 후 데이터가 표시됩니다"}
                   </td></tr>
                 )}
@@ -1243,15 +1243,15 @@ export default function PharmaDART() {
             {keys:[{k:"totalRev",c:"#38bdf8",n:"합산매출(조)"}], title:"합산 매출 추이 (조원)", u:"조"},
             {keys:[{k:"opMargin",c:"#4ade80",n:"영업이익률"},{k:"sgaRatio",c:"#fbbf24",n:"판관비율"},{k:"cogsRatio",c:"#f87171",n:"원가율"}], title:"평균 비용 구조 (%)", u:"%"},
           ].map(({keys,title,u})=>(
-            <div key={title} style={{background:"#0f172a",borderRadius:10,padding:"14px 16px",marginBottom:12,border:"1px solid #1e293b"}}>
+            <div key={title} style={{background:"#f1f5f9",borderRadius:10,padding:"14px 16px",marginBottom:12,border:"1px solid #d1d5db"}}>
               <div style={{fontSize:11,fontWeight:700,marginBottom:12}}>{title}</div>
               <ResponsiveContainer width="100%" height={190}>
                 <LineChart data={trend}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b"/>
-                  <XAxis dataKey="year" stroke="#1e293b" tick={{fontSize:10,fill:"#475569"}}/>
-                  <YAxis stroke="#1e293b" tick={{fontSize:10,fill:"#475569"}} unit={u} width={42}/>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb"/>
+                  <XAxis dataKey="year" stroke="#e5e7eb" tick={{fontSize:10,fill:"#374151"}}/>
+                  <YAxis stroke="#e5e7eb" tick={{fontSize:10,fill:"#374151"}} unit={u} width={42}/>
                   <Tooltip content={<Tip/>}/>
-                  <Legend wrapperStyle={{fontSize:10,color:"#475569"}}/>
+                  <Legend wrapperStyle={{fontSize:10,color:"#374151"}}/>
                   {keys.map(k=><Line key={k.k} type="monotone" dataKey={k.k} name={k.n} stroke={k.c} strokeWidth={2.5} dot={{r:3,fill:k.c}} connectNulls/>)}
                   <ReferenceLine y={0} stroke="#334155" strokeDasharray="3 3"/>
                 </LineChart>
