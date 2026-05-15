@@ -500,7 +500,7 @@ ${filtered.map((m,i)=>{
 <!-- COMPANY DETAIL SECTIONS -->
 <div class="section">
 <h2>🏢 기업별 상세 데이터 (현재 뷰 기준 · 클릭하여 펼치기)</h2>
-${filtered.map((m,_ci)=>{
+${filtered.map((m,i)=>{
   const tc = TC[m.type]||"#64748b";
   const rows = YEARS_ALL.map(y=>{
     const yd = rawData[m.name]?.years?.[String(y)];
@@ -510,7 +510,7 @@ ${filtered.map((m,_ci)=>{
   const revSpark = sparkline(rows.map(r=>r.revenue/1e8),"#2563eb",300,40);
   const opSpark  = sparkline(rows.map(r=>r.op_profit!=null&&r.revenue>0?r.op_profit/r.revenue*100:null),"#16a34a",300,40);
   return `
-<div class="co-section" id="co-${_ci}">
+<div class="co-section" id="co-${i}">
   <div class="co-header" onclick="toggle(this)">
     <div>
       <span class="co-name">${m.name}</span>
@@ -571,7 +571,7 @@ ${filtered.map((m,_ci)=>{
   </div>
   <input class="toc-search" id="tocSearch" placeholder="기업명 검색..." oninput="filterTOC(this.value)"/>
   <div class="toc-list" id="tocList">
-    ${filtered.map(m=>`
+    ${filtered.map((m,i)=>`
     <a class="toc-item" href="#co-${i}" onclick="return tocJump(this)" data-name="${m.name}" data-idx="${i}">
       <span>${m.name}</span>
       <span style="display:flex;gap:6px;align-items:center">
