@@ -189,63 +189,59 @@ function computeMetrics(rawData, YEARS) {
 /* ─────────────────────────────────────────
    EXCEL EXPORT
 ───────────────────────────────────────── */
-function exportExcel(metrics, rawData, filtered, filterInfo) {
+function exportExcel(metrics, rawData, filtered, filterInfo, YEARS) {
   const wb = XLSX.utils.book_new();
-  const dateStr = new Date().toISOString().slice(0,10);
 
-  // Sheet 0: 현재뷰 (필터 적용 상태)
-  const viewLabel = `현재뷰_${filterInfo.type!=="전체"?filterInfo.type:"전업종"}${filterInfo.search?`_${filterInfo.search}`:""}`;
-  const h0 = ["기업명","업종","시장",`CAGR(%)\n[${filterInfo.sortKey}순]`,"최신매출(억)","영업이익률(%)","순이익률(%)","판관비율(%)","원가율(%)","부채비율(%)","최근직원수","데이터연수"];
+  // Sheet 0: 현재뷰
+  const h0 = ["기업명","업종","시장","CAGR(%)","최신매출(억)","영업이익률(%)","순이익률(%)","부채비율(%)","데이터(개)"];
   const ws0 = XLSX.utils.aoa_to_sheet([
-    [`생성일시: ${new Date().toLocaleString("ko-KR")}  |  필터: ${filterInfo.type}  |  검색: "${filterInfo.search||"없음"}"  |  정렬: ${filterInfo.sortKey} ${filterInfo.sortDir==="asc"?"오름차순":"내림차순"}  |  표시 ${filtered.length}개사`],
-    [],
-    h0,
-    ...filtered.map((m,i)=>[
+    [`생성: ${new Date().toLocaleString("ko-KR")} | 필터: ${filterInfo.type} | 정렬: ${filterInfo.sortKey} | ${filtered.length}개사`],
+    [], h0,
+    ...filtered.map(m=>[
       m.name, m.type, m.market,
       m.cagr!=null?+m.cagr.toFixed(1):null,
       m.latestRevB,
       m.opMargin!=null?+m.opMargin.toFixed(1):null,
       m.netMargin!=null?+m.netMargin.toFixed(1):null,
-      m.sgaRatio!=null?+m.sgaRatio.toFixed(1):null,
-      m.cogsRatio!=null?+m.cogsRatio.toFixed(1):null,
       m.debtRatio!=null?+m.debtRatio.toFixed(1):null,
-      m.latestEmp||null, m.dataYears,
+      m.dataYears,
     ])
   ]);
-  ws0["!cols"] = [14,12,8,10,12,12,10,10,10,10,10,10].map(w=>({wch:w}));
-  ws0["!merges"] = [{s:{r:0,c:0},e:{r:0,c:11}}];
+  ws0["!cols"] = [16,12,8,8,12,12,10,10,8].map(w=>({wch:w}));
+  ws0["!merges"] = [{s:{r:0,c:0},e:{r:0,c:8}}];
   XLSX.utils.book_append_sheet(wb, ws0, "📌현재뷰");
 
-  // Sheet 1: 기업요약 (전체)
-  const h1 = ["기업명","업종","시장","CAGR(%)","최신매출(억)","영업이익률(%)","순이익률(%)","판관비율(%)","원가율(%)","부채비율(%)","최근직원수","데이터연수"];
+  // Sheet 1: 전체 기업 요약
+  const h1 = ["기업명","업종","시장","CAGR(%)","최신매출(억)","영업이익률(%)","순이익률(%)","부채비율(%)","데이터(개)"];
   const ws1 = XLSX.utils.aoa_to_sheet([h1, ...metrics.map(m=>[
     m.name, m.type, m.market,
     m.cagr!=null?+m.cagr.toFixed(1):null,
     m.latestRevB,
     m.opMargin!=null?+m.opMargin.toFixed(1):null,
     m.netMargin!=null?+m.netMargin.toFixed(1):null,
-    m.sgaRatio!=null?+m.sgaRatio.toFixed(1):null,
-    m.cogsRatio!=null?+m.cogsRatio.toFixed(1):null,
     m.debtRatio!=null?+m.debtRatio.toFixed(1):null,
-    m.latestEmp||null, m.dataYears,
+    m.dataYears,
   ])]);
-  ws1["!cols"] = [14,12,8,8,12,12,10,10,10,10,10,10].map(w=>({wch:w}));
+  ws1["!cols"] = [16,12,8,8,12,12,10,10,8].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb, ws1, "전체기업요약");
 
-  const makeSheet = (field, label, div=1, dec=0) => {
+  // 연도별 시트
+  const makeSheet = (field, label, div=1) => {
+    if (!YEARS||!YEARS.length) return;
     const header = ["기업명","업종",...YEARS];
     const rows = metrics.map(m=>[
       m.name, m.type,
       ...YEARS.map(y=>{
         const v = rawData[m.name]?.years?.[String(y)]?.[field];
-        return v!=null ? +(v/div).toFixed(dec) : null;
+        return v!=null ? +(v/div).toFixed(0) : null;
       })
     ]);
     const ws = XLSX.utils.aoa_to_sheet([header,...rows]);
-    ws["!cols"] = [14,12,...YEARS.map(()=>({wch:10}))].map(w=>typeof w==="number"?{wch:w}:w);
+    ws["!cols"] = [16,12,...YEARS.map(()=>({wch:10}))];
     XLSX.utils.book_append_sheet(wb, ws, label);
   };
   const makeRatioSheet = (num, den, label) => {
+    if (!YEARS||!YEARS.length) return;
     const header = ["기업명","업종",...YEARS];
     const rows = metrics.map(m=>[
       m.name, m.type,
@@ -255,20 +251,16 @@ function exportExcel(metrics, rawData, filtered, filterInfo) {
       })
     ]);
     const ws = XLSX.utils.aoa_to_sheet([header,...rows]);
-    ws["!cols"] = [14,12,...YEARS.map(()=>({wch:8}))].map(w=>typeof w==="number"?{wch:w}:w);
+    ws["!cols"] = [16,12,...YEARS.map(()=>({wch:8}))];
     XLSX.utils.book_append_sheet(wb, ws, label);
   };
 
-  makeSheet("revenue",   "매출_억원",   1e8, 0);
-  makeSheet("op_profit", "영업이익_억", 1e8, 0);
-  makeSheet("sga",       "판관비_억",   1e8, 0);
-  makeSheet("cogs",      "원가_억",     1e8, 0);
-  makeSheet("assets",    "자산_억",     1e8, 0);
-  makeSheet("liabilities","부채_억",    1e8, 0);
-  makeSheet("employees", "직원수",      1,   0);
-  makeRatioSheet("op_profit","revenue", "영업이익률_%");
-  makeRatioSheet("sga","revenue",       "판관비율_%");
-  makeRatioSheet("cogs","revenue",      "원가율_%");
+  makeSheet("revenue",    "매출_억원",   1e8);
+  makeSheet("op_profit",  "영업이익_억", 1e8);
+  makeSheet("assets",     "자산_억",     1e8);
+  makeSheet("liabilities","부채_억",     1e8);
+  makeRatioSheet("op_profit","revenue",  "영업이익률_%");
+  makeRatioSheet("net_income","revenue", "순이익률_%");
 
   XLSX.writeFile(wb, `한국제약바이오_DART_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
@@ -328,66 +320,77 @@ function exportHTML(metrics, rawData, filtered, filterInfo, trend) {
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   ::-webkit-scrollbar{width:5px;height:5px}
-  ::-webkit-scrollbar-thumb{background:#1e293b;border-radius:3px}
-  body{background:#020617;color:#e2e8f0;font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:12px;line-height:1.5;padding:28px 24px}
-  h1{font-size:20px;font-weight:900;letter-spacing:-0.03em;margin-bottom:4px}
-  h2{font-size:13px;font-weight:700;color:#94a3b8;margin-bottom:14px;padding-bottom:6px;border-bottom:1px solid #1e293b}
-  h3{font-size:12px;font-weight:700;color:#e2e8f0;margin-bottom:8px}
-  .tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700}
-  .section{margin-bottom:28px}
+  ::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:3px}
+  body{background:#ffffff;color:#111827;font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:12px;line-height:1.6;padding:28px 24px}
+  h1{font-size:22px;font-weight:900;letter-spacing:-0.03em;margin-bottom:4px;color:#0f172a}
+  h2{font-size:13px;font-weight:700;color:#374151;margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid #e5e7eb}
+  .tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700}
+  .section{margin-bottom:32px}
   /* KPI */
-  .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:24px}
-  .kpi{background:#0f172a;border-radius:8px;padding:12px 14px;border-top:2px solid var(--c)}
-  .kpi-label{font-size:9px;color:#334155;letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px}
-  .kpi-val{font-size:18px;font-weight:800;color:#f1f5f9;font-family:monospace;line-height:1}
+  .kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px}
+  .kpi{background:#ffffff;border-radius:8px;padding:14px 16px;border:1px solid #e5e7eb;border-top:3px solid var(--c);box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+  .kpi-label{font-size:9px;color:#6b7280;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+  .kpi-val{font-size:20px;font-weight:800;color:#0f172a;font-family:monospace;line-height:1}
   /* TYPE CARDS */
-  .type-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px}
-  .type-card{background:#0f172a;border-radius:8px;padding:12px 14px;border-top:2px solid var(--c)}
-  .type-name{font-size:12px;font-weight:700;color:var(--c);margin-bottom:10px}
-  .type-row{display:flex;justify-content:space-between;font-size:10px;padding:4px 0;border-bottom:1px solid #0d1117}
-  .type-key{color:#475569}.type-val{font-family:monospace;color:#e2e8f0;font-weight:600}
+  .type-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+  .type-card{background:#ffffff;border-radius:8px;padding:14px 16px;border:1px solid #e5e7eb;border-top:3px solid var(--c);box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+  .type-name{font-size:13px;font-weight:700;color:var(--c);margin-bottom:10px}
+  .type-row{display:flex;justify-content:space-between;font-size:11px;padding:5px 0;border-bottom:1px solid #f3f4f6}
+  .type-key{color:#6b7280}.type-val{font-family:monospace;color:#111827;font-weight:600}
   /* TREND */
-  .trend-wrap{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px}
-  .trend-card{background:#0f172a;border-radius:8px;padding:12px 14px;border:1px solid #1e293b}
-  .trend-label{font-size:9px;color:#475569;margin-bottom:6px}
+  .trend-wrap{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px}
+  .trend-card{background:#f9fafb;border-radius:8px;padding:14px 16px;border:1px solid #e5e7eb}
+  .trend-label{font-size:10px;color:#6b7280;margin-bottom:8px;font-weight:600}
   /* MAIN TABLE */
-  .tbl-wrap{background:#0f172a;border-radius:10px;border:1px solid #1e293b;overflow-x:auto}
-  table{width:100%;border-collapse:collapse;font-size:10px}
+  .tbl-wrap{background:#ffffff;border-radius:10px;border:1px solid #e5e7eb;overflow-x:auto;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+  table{width:100%;border-collapse:collapse;font-size:11px}
   thead tr{border-bottom:2px solid #e5e7eb}
-  th{padding:8px 10px;text-align:right;color:#111827;font-weight:600;white-space:nowrap;font-size:11px;font-family:inherit;cursor:pointer;user-select:none;background:#f9fafb}
+  th{padding:10px 12px;text-align:right;color:#111827;font-weight:700;white-space:nowrap;background:#f9fafb;cursor:pointer;user-select:none}
   th.left{text-align:left}
-  th.left{text-align:left}
-  th:hover{color:#e2e8f0}
-  td{padding:5px 9px;text-align:right;font-family:monospace;border-bottom:1px solid #f8fafc}
-  td.left{text-align:left;font-family:inherit}
-  tr:nth-child(even){background:#f8fafc}
-  tr:hover{background:#1e293b!important}
-  .th-active{color:#38bdf8!important}
+  th:hover{background:#f3f4f6}
+  td{padding:8px 12px;text-align:right;color:#111827;border-bottom:1px solid #f3f4f6}
+  td.left{text-align:left}
+  tr:nth-child(even) td{background:#f9fafb}
+  tr:hover td{background:#eff6ff!important}
   /* COMPANY SECTIONS */
-  .co-section{background:#0f172a;border-radius:10px;border:1px solid #1e293b;margin-bottom:12px;overflow:hidden}
-  .co-header{padding:12px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;border-bottom:1px solid #1e293b}
-  .co-name{font-size:13px;font-weight:700;color:#f1f5f9}
-  .co-kpis{display:flex;gap:8px;flex-wrap:wrap;margin:10px 16px}
-  .co-k{background:#f8fafc;border-radius:5px;padding:4px 10px;font-size:9px}
-  .co-k-label{color:#334155;display:block;margin-bottom:1px}
-  .co-k-val{font-family:monospace;font-weight:700}
-  .co-body{padding:0 16px 14px}
-  .co-tbl table{font-size:9px}
-  .co-tbl td,.co-tbl th{padding:4px 7px}
+  .co-section{background:#ffffff;border-radius:10px;border:1px solid #e5e7eb;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
+  .co-header{padding:14px 18px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;border-bottom:1px solid #f3f4f6;background:#f9fafb}
+  .co-name{font-size:14px;font-weight:700;color:#0f172a}
+  .co-kpis{display:flex;gap:8px;flex-wrap:wrap;padding:12px 18px;background:#ffffff;border-bottom:1px solid #f3f4f6}
+  .co-k{background:#f9fafb;border-radius:6px;padding:6px 12px;font-size:10px;border:1px solid #e5e7eb}
+  .co-k-label{color:#6b7280;display:block;margin-bottom:2px}
+  .co-k-val{font-family:monospace;font-weight:700;color:#0f172a}
+  .co-body{padding:0 18px 16px}
+  .co-tbl table{font-size:10px;margin-top:10px}
+  .co-tbl td,.co-tbl th{padding:6px 10px;color:#111827}
+  .co-tbl thead tr{background:#f9fafb}
+  .co-tbl tr:nth-child(even) td{background:#f9fafb}
   /* FILTER INFO */
-  .filter-bar{background:#0c1f35;border:1px solid #1e3a5f;border-radius:8px;padding:9px 14px;margin-bottom:18px;font-size:10px;color:#475569;display:flex;gap:16px;flex-wrap:wrap}
-  .filter-item span{color:#38bdf8;font-weight:600}
-  /* FOOTER */
-  footer{margin-top:32px;padding-top:16px;border-top:1px solid #1e293b;font-size:9px;color:#334155;font-family:monospace}
-  @media print{.co-body{display:block!important}body{padding:12px}}
+  .filter-bar{background:#f0f7ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 16px;margin-bottom:20px;font-size:11px;color:#374151;display:flex;gap:16px;flex-wrap:wrap}
+  .filter-item span{color:#2563eb;font-weight:700}
+  /* TOC */
+  .toc-btn{position:fixed;bottom:24px;right:24px;width:48px;height:48px;border-radius:50%;background:#2563eb;color:#fff;border:none;font-size:20px;cursor:pointer;box-shadow:0 4px 16px rgba(37,99,235,0.4);z-index:1000;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+  .toc-btn:hover{background:#1d4ed8;transform:scale(1.08)}
+  .toc-panel{position:fixed;bottom:84px;right:24px;width:240px;max-height:420px;overflow-y:auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.15);z-index:999;display:none;flex-direction:column}
+  .toc-panel.open{display:flex}
+  .toc-header{padding:10px 14px;font-size:11px;font-weight:700;color:#374151;border-bottom:1px solid #e5e7eb;background:#f9fafb;border-radius:12px 12px 0 0;display:flex;justify-content:space-between;align-items:center}
+  .toc-search{width:100%;padding:7px 12px;border:none;border-bottom:1px solid #e5e7eb;font-size:11px;outline:none;color:#111827}
+  .toc-search::placeholder{color:#9ca3af}
+  .toc-list{overflow-y:auto;max-height:300px}
+  .toc-item{padding:8px 14px;font-size:11px;color:#111827;cursor:pointer;display:flex;justify-content:space-between;align-items:center;text-decoration:none;border-bottom:1px solid #f3f4f6}
+  .toc-item:hover{background:#eff6ff;color:#2563eb}
+  .toc-item .toc-type{font-size:9px;padding:1px 6px;border-radius:3px;font-weight:700}
+  .toc-item .toc-cagr{font-size:10px;font-family:monospace;color:#6b7280}
+  footer{margin-top:32px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:10px;color:#6b7280}
+  @media print{.co-body{display:block!important}body{padding:12px}th,td{font-size:9px;padding:5px 7px}}
 </style>
 </head>
 <body>
 
 <div style="margin-bottom:20px">
-  <div style="font-size:9px;color:#38bdf8;letter-spacing:.15em;margin-bottom:5px">DART OPENAPI · 한국 제약/바이오 상장사 분석 리포트</div>
+  <div style="font-size:10px;color:#2563eb;letter-spacing:.1em;margin-bottom:6px;font-weight:600">DART OPENAPI · 한국 제약/바이오 상장사 분석 리포트</div>
   <h1>한국 제약/바이오 상장사 재무 분석</h1>
-  <p style="color:#334155;font-size:10px;margin-top:4px">생성일시: ${dateStr} · 분석 기간: 2016–2025</p>
+  <p style="color:#6b7280;font-size:11px;margin-top:6px">생성일시: ${dateStr}</p>
 </div>
 
 <!-- FILTER INFO -->
@@ -403,11 +406,11 @@ function exportHTML(metrics, rawData, filtered, filterInfo, trend) {
 <h2>📊 종합 지표 요약</h2>
 <div class="kpi-row">
 ${[
-  {label:"분석 기업",val:`${metrics.length}개사`,c:"#38bdf8"},
-  {label:"표시 기업 (현재뷰)",val:`${filtered.length}개사`,c:"#60a5fa"},
-  {label:"평균 CAGR",val:fp(filtered.reduce((s,m)=>s+m.cagr,0)/filtered.length),c:"#4ade80"},
-  {label:"합산 최신매출",val:(()=>{const s=metrics.reduce((a,m)=>a+(m.latestRev||0),0);return s>0?`${(s/1e12).toFixed(2)}조`:"—"})(),c:"#a78bfa"},
-  {label:"평균 영업이익률",val:fp(metrics.filter(m=>m.opMargin!=null).reduce((s,m)=>s+m.opMargin,0)/Math.max(metrics.filter(m=>m.opMargin!=null).length,1)),c:"#fb923c"},
+  {label:"분석 기업",val:`${metrics.length}개사`,c:"#2563eb"},
+  {label:"표시 기업 (현재뷰)",val:`${filtered.length}개사`,c:"#3b82f6"},
+  {label:"평균 CAGR",val:fp(filtered.reduce((s,m)=>s+m.cagr,0)/filtered.length),c:"#16a34a"},
+  {label:"합산 최신매출",val:(()=>{const s=metrics.reduce((a,m)=>a+(m.latestRev||0),0);return s>0?`${(s/1e12).toFixed(2)}조`:"—"})(),c:"#7c3aed"},
+  {label:"평균 영업이익률",val:fp(metrics.filter(m=>m.opMargin!=null).reduce((s,m)=>s+m.opMargin,0)/Math.max(metrics.filter(m=>m.opMargin!=null).length,1)),c:"#ea580c"},
 ].map(k=>`<div class="kpi" style="--c:${k.c}"><div class="kpi-label">${k.label}</div><div class="kpi-val">${k.val}</div></div>`).join("")}
 </div>
 </div>
@@ -418,7 +421,7 @@ ${[
 <div class="trend-wrap">
   <div class="trend-card">
     <div class="trend-label">합산 매출 추이 (조원) — ${trend.map(t=>t.year).join("·")}</div>
-    <div style="margin-bottom:6px">${sparkline(trendRevs,"#38bdf8",580,60)}</div>
+    <div style="margin-bottom:6px">${sparkline(trendRevs,"#2563eb",580,60)}</div>
     <div style="display:flex;justify-content:space-between;font-size:9px;font-family:monospace;color:#475569">
       <span>2016: ${trendRevs[0]?.toFixed(2)||"—"}조</span>
       <span>2025: ${trendRevs.at(-1)?.toFixed(2)||"—"}조</span>
@@ -426,7 +429,7 @@ ${[
   </div>
   <div class="trend-card">
     <div class="trend-label">평균 영업이익률 추이 (%)</div>
-    <div style="margin-bottom:6px">${sparkline(trendOp,"#4ade80",580,60)}</div>
+    <div style="margin-bottom:6px">${sparkline(trendOp,"#16a34a",580,60)}</div>
     <div style="display:flex;justify-content:space-between;font-size:9px;font-family:monospace;color:#475569">
       <span>2016: ${trendOp[0]?.toFixed(1)||"—"}%</span>
       <span>2025: ${trendOp.at(-1)?.toFixed(1)||"—"}%</span>
@@ -442,7 +445,7 @@ ${[
 ${typeStats.map(t=>`
   <div class="type-card" style="--c:${TC[t.type]||"#94a3b8"}">
     <div class="type-name">${t.type} <span style="font-size:9px;color:#334155;font-weight:400">(${t.count}개사)</span></div>
-    ${[["평균 CAGR",fp(t.cagr)],["영업이익률",fp(t.opM)],["판관비율",fp(t.sgaR)],["원가율",fp(t.cogsR)]].map(([k,v])=>`
+    ${[["평균 CAGR",fp(t.cagr)],["영업이익률",fp(t.opM)],["순이익률",fp(t.netM)||"—"]].map(([k,v])=>`
     <div class="type-row"><span class="type-key">${k}</span><span class="type-val">${v}</span></div>`).join("")}
   </div>`).join("")}
 </div>
@@ -463,10 +466,9 @@ ${typeStats.map(t=>`
   <th onclick="sortTable(5)">최신매출(억)</th>
   <th onclick="sortTable(6)">영업이익률</th>
   <th onclick="sortTable(7)">순이익률</th>
-  <th onclick="sortTable(8)">판관비율</th>
-  <th onclick="sortTable(9)">원가율</th>
+
   <th onclick="sortTable(10)">부채비율</th>
-  <th onclick="sortTable(11)">직원수</th>
+
   <th>매출추이</th>
 </tr>
 </thead>
@@ -483,10 +485,7 @@ ${filtered.map((m,i)=>{
   <td>${m.latestRevB!=null?m.latestRevB.toLocaleString()+"억":"—"}</td>
   <td style="color:${m.opMargin>15?"#4ade80":m.opMargin<0?"#f87171":"#e2e8f0"}">${fp(m.opMargin)}</td>
   <td>${fp(m.netMargin)}</td>
-  <td style="color:#fbbf24">${fp(m.sgaRatio)}</td>
-  <td style="color:#f87171">${fp(m.cogsRatio)}</td>
   <td>${fp(m.debtRatio)}</td>
-  <td style="color:#94a3b8">${m.latestEmp?m.latestEmp.toLocaleString()+"명":"—"}</td>
   <td>${revSpark}</td>
 </tr>`;}).join("")}
 </tbody>
@@ -507,7 +506,7 @@ ${filtered.map(m=>{
   const revSpark = sparkline(rows.map(r=>r.revenue/1e8),"#38bdf8",300,40);
   const opSpark  = sparkline(rows.map(r=>r.op_profit!=null&&r.revenue>0?r.op_profit/r.revenue*100:null),"#4ade80",300,40);
   return `
-<div class="co-section">
+<div class="co-section" id="co-${m.name.replace(/\s/g,'-')}">
   <div class="co-header" onclick="toggle(this)">
     <div>
       <span class="co-name">${m.name}</span>
@@ -516,13 +515,13 @@ ${filtered.map(m=>{
     </div>
     <div style="display:flex;gap:16px;align-items:center">
       <span style="font-family:monospace;font-size:11px;font-weight:700;color:${m.cagr>=20?"#4ade80":m.cagr<0?"#f87171":"#94a3b8"}">CAGR ${fp(m.cagr)}</span>
-      <span style="font-family:monospace;font-size:11px;color:#38bdf8">${fb(m.latestRev)}</span>
+      <span style="font-family:monospace;font-size:11px;color:#2563eb">${fb(m.latestRev)}</span>
       <span style="color:#334155;font-size:14px" class="toggle-arrow">▾</span>
     </div>
   </div>
   <div class="co-body">
     <div class="co-kpis">
-      ${[["CAGR",fp(m.cagr),m.cagr>=15?"#4ade80":m.cagr<0?"#f87171":"#38bdf8"],["최신매출",fb(m.latestRev),"#38bdf8"],["영업이익률",fp(m.opMargin),"#4ade80"],["판관비율",fp(m.sgaRatio),"#fbbf24"],["원가율",fp(m.cogsRatio),"#f87171"],["직원수",m.latestEmp?m.latestEmp.toLocaleString()+"명":"—","#a78bfa"]].map(([l,v,c])=>`<div class="co-k"><span class="co-k-label">${l}</span><span class="co-k-val" style="color:${c}">${v}</span></div>`).join("")}
+      ${[["CAGR",fp(m.cagr),m.cagr>=15?"#16a34a":m.cagr<0?"#dc2626":"#2563eb"],["최신매출",fb(m.latestRev),"#2563eb"],["영업이익률",fp(m.opMargin),"#16a34a"],["순이익률",fp(m.netMargin),"#7c3aed"],["부채비율",fp(m.debtRatio),"#ea580c"]].map(([l,v,c])=>`<div class="co-k"><span class="co-k-label">${l}</span><span class="co-k-val" style="color:${c}">${v}</span></div>`).join("")}
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 10px;padding:0 0 6px">
       <div style="background:#f8fafc;border-radius:6px;padding:10px 12px">
@@ -538,17 +537,14 @@ ${filtered.map(m=>{
       <table>
         <thead><tr>
           <th class="left">연도</th><th>매출(억)</th><th>영업이익</th><th>순이익</th>
-          <th>자산</th><th>부채</th><th>판관비</th><th>원가</th>
-          <th>직원</th><th>영업이익률</th><th>판관비율</th><th>원가율</th>
+          <th>자산</th><th>부채</th>
+          <th>영업이익률</th><th>순이익률</th><th>부채비율</th>
         </tr></thead>
         <tbody>
         ${rows.map((r,i)=>`<tr style="background:${i%2?"#f8fafc":"transparent"}">
-          <td class="left" style="color:#38bdf8;font-weight:700">${r.y}</td>
-          ${[r.revenue,r.op_profit,r.net_income,r.assets,r.liabilities,r.sga,r.cogs].map(v=>`<td>${v!=null?Math.round(v/1e8).toLocaleString():"—"}</td>`).join("")}
-          <td style="color:#94a3b8">${r.employees?.toLocaleString()||"—"}</td>
+          <td class="left" style="color:#2563eb;font-weight:700">${r.y}</td>
+          ${[r.revenue,r.op_profit,r.net_income,r.assets,r.liabilities].map(v=>`<td>${v!=null?Math.round(v/1e8).toLocaleString():"—"}</td>`).join("")}
           <td style="color:${r.op_profit/r.revenue>0.15?"#4ade80":r.op_profit/r.revenue<0?"#f87171":"#e2e8f0"}">${r.op_profit!=null&&r.revenue>0?`${(r.op_profit/r.revenue*100).toFixed(1)}%`:"—"}</td>
-          <td style="color:#fbbf24">${r.sga>0&&r.revenue>0?`${(r.sga/r.revenue*100).toFixed(1)}%`:"—"}</td>
-          <td style="color:#f87171">${r.cogs>0&&r.revenue>0?`${(r.cogs/r.revenue*100).toFixed(1)}%`:"—"}</td>
         </tr>`).join("")}
         </tbody>
       </table>
@@ -558,12 +554,32 @@ ${filtered.map(m=>{
 </div>
 
 <footer>
-  <div>한국 제약/바이오 상장사 재무분석 · 생성: ${dateStr}</div>
+  <div style="font-weight:600;color:#374151;margin-bottom:4px">한국 제약/바이오 상장사 재무분석</div>
   <div style="margin-top:4px">출처: DART OpenAPI (금융감독원) · 필터: ${filterInfo.type} · ${filtered.length}/${metrics.length}개사</div>
 </footer>
 
+<!-- TOC 플로팅 버튼 -->
+<button class="toc-btn" onclick="toggleTOC()" title="기업 목차">☰</button>
+<div class="toc-panel" id="tocPanel">
+  <div class="toc-header">
+    <span>📋 기업 목차 (${filtered.length}개사)</span>
+    <span onclick="collapseAll()" style="cursor:pointer;font-size:10px;color:#6b7280;font-weight:400">모두 접기</span>
+  </div>
+  <input class="toc-search" id="tocSearch" placeholder="기업명 검색..." oninput="filterTOC(this.value)"/>
+  <div class="toc-list" id="tocList">
+    ${filtered.map(m=>`
+    <a class="toc-item" href="#co-${m.name.replace(/\s/g,'-')}" onclick="tocJump(this)" data-name="${m.name}">
+      <span>${m.name}</span>
+      <span style="display:flex;gap:6px;align-items:center">
+        <span class="toc-type" style="background:${({"의약품·제약":"#dbeafe","바이오·제약":"#dcfce7","의료기기":"#ede9fe"})[m.type]||"#f3f4f6"};color:${({"의약품·제약":"#1d4ed8","바이오·제약":"#16a34a","의료기기":"#6d28d9"})[m.type]||"#374151"}">${m.type.split("·")[0]}</span>
+        <span class="toc-cagr">${m.cagr!=null?(m.cagr>=0?"+":"")+m.cagr.toFixed(1)+"%":"—"}</span>
+      </span>
+    </a>`).join("")}
+  </div>
+</div>
+
 <script>
-// 펼치기/닫기 (기본: 모두 열림)
+// 펼치기/닫기
 function toggle(el) {
   const body  = el.nextElementSibling;
   const arrow = el.querySelector('.toggle-arrow');
@@ -571,12 +587,44 @@ function toggle(el) {
   body.style.display = isOpen ? 'none' : 'block';
   if (arrow) arrow.textContent = isOpen ? '▸' : '▾';
 }
+// 모두 접기
+function collapseAll() {
+  document.querySelectorAll('.co-body').forEach(b=>{ b.style.display='none'; });
+  document.querySelectorAll('.toggle-arrow').forEach(a=>{ a.textContent='▸'; });
+}
+// TOC 토글
+function toggleTOC() {
+  const p = document.getElementById('tocPanel');
+  p.classList.toggle('open');
+  if (p.classList.contains('open')) document.getElementById('tocSearch').focus();
+}
+// TOC 클릭 → 섹션으로 이동 + 펼치기
+function tocJump(el) {
+  const id = el.getAttribute('href').slice(1);
+  const sec = document.getElementById(id);
+  if (sec) {
+    sec.scrollIntoView({behavior:'smooth', block:'start'});
+    const body = sec.querySelector('.co-body');
+    const arrow = sec.querySelector('.toggle-arrow');
+    if (body) { body.style.display='block'; if(arrow) arrow.textContent='▾'; }
+  }
+  document.getElementById('tocPanel').classList.remove('open');
+  return false;
+}
+// TOC 검색 필터
+function filterTOC(q) {
+  const items = document.querySelectorAll('.toc-item');
+  const lq = q.toLowerCase();
+  items.forEach(item=>{
+    item.style.display = item.dataset.name.toLowerCase().includes(lq) ? 'flex' : 'none';
+  });
+}
 // 테이블 정렬
 let sortCol=-1, sortAsc=true;
 function sortTable(col) {
   const tbl = document.getElementById('mainTable');
   const ths  = tbl.querySelectorAll('th');
-  ths.forEach((th,i)=>{ th.style.color=i===col?"#38bdf8":""; });
+  ths.forEach((th,i)=>{ th.style.color=i===col?"#2563eb":""; });
   const tbody = tbl.querySelector('tbody');
   const rows  = Array.from(tbody.querySelectorAll('tr'));
   sortAsc = sortCol===col ? !sortAsc : true;
@@ -591,6 +639,12 @@ function sortTable(col) {
   rows.forEach(r=>tbody.appendChild(r));
   rows.forEach((r,i)=>{ r.querySelector('td').textContent=i+1; });
 }
+// 외부 클릭 시 TOC 닫기
+document.addEventListener('click', e=>{
+  const panel = document.getElementById('tocPanel');
+  const btn   = document.querySelector('.toc-btn');
+  if (!panel.contains(e.target) && !btn.contains(e.target)) panel.classList.remove('open');
+});
 </script>
 </body>
 </html>`;
@@ -1020,7 +1074,7 @@ export default function PharmaDART() {
           </div>
           <div style={{display:"flex",gap:8}}>
             <button
-              onClick={()=>exportExcel(metrics,rawData,filtered,{type:fType,search,sortKey,sortDir})}
+              onClick={()=>exportExcel(metrics,rawData,filtered,{type:fType,search,sortKey,sortDir},YEARS)}
               disabled={!metrics.length}
               style={{padding:"8px 14px",background:metrics.length?"#2563eb":"#e5e7eb",color:metrics.length?"#ffffff":"#9ca3af",
                 border:`1px solid ${metrics.length?"#1e40af":"#d1d5db"}`,borderRadius:7,cursor:metrics.length?"pointer":"default",
